@@ -1,0 +1,8 @@
+# Obsidian per-device UI state
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# Local/generated files
+.DS_Store
+.trash/
+AI项目汇总/.merge.lock
