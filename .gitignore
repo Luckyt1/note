@@ -6,3 +6,7 @@
 .DS_Store
 .trash/
 AI项目汇总/.merge.lock
+
+# Python cache files
+__pycache__/
+*.py[cod]

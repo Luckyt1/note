@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codex Skills 项目汇总</title>
+  <style>:root { color-scheme: light dark; }
+body { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; font: 16px/1.75 system-ui, sans-serif; }
+h1, h2, h3 { line-height: 1.3; margin-top: 1.8em; }
+h1 { border-bottom: 2px solid #8885; padding-bottom: .35em; }
+h2 { border-bottom: 1px solid #8885; padding-bottom: .25em; }
+code { background: #8882; border-radius: 4px; padding: .15em .35em; }
+pre { overflow-x: auto; background: #8882; border-radius: 8px; padding: 1rem; }
+pre code { background: none; padding: 0; }
+a { color: #3977d4; }
+blockquote { border-left: 4px solid #8886; margin-left: 0; padding-left: 1rem; color: #777; }
+hr { border: 0; border-top: 1px solid #8885; margin: 2rem 0; }
+footer { color: #777; font-size: .9rem; margin-top: 3rem; }</style>
+</head>
+<body>
+<main>
+<h1>Codex Skills 项目汇总</h1>
+<hr>
+<h2>创建自动 Obsidian 项目笔记 Skill</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T14:31:21+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_14-32-01_Codex Skills.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>创建并全局安装 <code>obsidian-project-note</code> Skill。以后 AI 完成会修改项目文件的开发任务后，会在 Obsidian 的 <code>note</code> 仓库中生成一篇中文笔记，总结完成内容、验证结果、决策取舍和值得学习的知识。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>SKILL.md</code>：定义自动触发边界、笔记模板、隐私规则和完成后的保存流程。</li>
+<li><code>agents/openai.yaml</code>：启用隐式调用，并提供中文名称与说明。</li>
+<li><code>scripts/save_note.py</code>：使用 Python 标准库把准备好的 Markdown 安全写入 <code>AI项目笔记/</code>，自动生成唯一文件名并清理非法字符。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>quick_validate.py</code>：Skill 结构与 frontmatter 校验通过。</li>
+<li><code>python3 -m py_compile</code>：保存脚本语法检查通过。</li>
+<li>隔离仓库写入测试：目录创建、文件名清理、内容一致性和必需标题检查全部通过。</li>
+<li>安装后文件比对：全局安装内容与已验证版本一致。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>Obsidian 仓库本质上是 Markdown 文件目录，直接写入 <code>.md</code> 文件即可被 Obsidian 识别，不要求 GUI 常驻。</li>
+<li>Skill 的 <code>description</code> 决定自动发现和隐式触发的准确度，应同时写清适用任务与不适用边界。</li>
+<li>重复且容易出错的保存逻辑适合放进无第三方依赖的小脚本，正文内容仍由 AI 根据真实任务生成。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>系统未注册 <code>obsidian</code> CLI，因此选择直接写入 Obsidian 1.12.7 已配置的仓库，而不是依赖 AppImage GUI 或 URI 协议。</li>
+<li>仅创建 Skill、界面元数据和一个保存脚本，没有增加额外依赖或修改项目仓库。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>新的 Codex 会话会自动发现该全局 Skill；若当前会话没有刷新 Skill 列表，重新开启会话即可。</li>
+</ul>
+<hr>
+<h2>为 Obsidian 项目笔记增加每小时自动汇总</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T15:54:57+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_15-55-38_Codex Skills.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>扩展 <code>obsidian-project-note</code> Skill，新增每小时运行的项目笔记整理器。它按 frontmatter 中的 <code>project</code> 精确分组，把内容追加到 <code>AI项目汇总/&lt;项目&gt;/项目汇总.md</code>，确认汇总文件已可靠写入后自动删除 <code>AI项目笔记</code> 中的原始笔记。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>scripts/merge_notes.py</code>：实现按项目分组、可读的 Markdown 合并、重试去重、进程锁、原子写入与成功后删除。</li>
+<li><code>scripts/save_note.py</code>：增加 frontmatter 合约校验、并发排他创建和长 UTF-8 项目名处理，避免原始笔记在进入汇总前被覆盖或无法保存。</li>
+<li><code>SKILL.md</code> 与 <code>agents/openai.yaml</code>：记录自动整理流程并更新 Skill 的界面说明。</li>
+<li><code>~/.config/systemd/user/obsidian-project-note-merge.service</code>：定义一次性整理服务。</li>
+<li><code>~/.config/systemd/user/obsidian-project-note-merge.timer</code>：登录后启动并每 1 小时触发；已启用 linger，退出桌面登录后也会继续运行。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 /tmp/test_merge_notes.py -v</code>：4 个回归测试通过，覆盖分组删除、失败保留、重复重试、并发保存、frontmatter 校验和超长 emoji 项目名。</li>
+<li>独立只读复审：最终无 HIGH/MEDIUM 问题。</li>
+<li><code>systemd-analyze --user verify</code>：service 与 timer 单元校验通过。</li>
+<li>首次真实合并：8 篇原始笔记成功合并为 3 个项目汇总，8 个来源标记全部存在，原始笔记目录清空。</li>
+<li><code>systemctl --user list-timers</code>：timer 为 active/enabled，下一次运行时间是 2026-08-23 16:53:57 CST。</li>
+<li><code>loginctl show-user tang -p Linger</code>：<code>Linger=yes</code>。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>自动删除源文件的流程必须先原子写入目标、执行 <code>fsync</code>，再删除源文件；否则异常或断电可能造成不可恢复的数据丢失。</li>
+<li>使用唯一来源标记能让中断后的重试保持幂等：已合并内容不会重复，残留源文件仍可安全删除。</li>
+<li><code>os.link()</code> 可以在同一文件系统内原子且排他地发布已经写好的文件，避免多个 AI 同一秒保存时互相覆盖。</li>
+<li>用户级 systemd timer 比依赖桌面应用运行的 Codex Scheduled Tasks 更适合固定周期整理工作区外的本机 Obsidian 仓库。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>采用 Python 标准库加 systemd，没有增加第三方依赖。</li>
+<li>汇总文件保留每篇笔记的完整结构化内容，而不是再次调用 AI 改写，避免定时任务产生含义漂移或遗漏。</li>
+<li>无法解析 <code>project</code> 的异常笔记不会删除，会留在收集箱供人工修复。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>无</li>
+</ul>
+<hr>
+<h2>制作 Obsidian AI 项目笔记系统迁移包</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T17:12:54+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_17-13-27_Codex Skills.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>把自动项目笔记 Skill、保存与合并脚本、systemd 定时器和迁移说明整理为一个便携压缩包，并连同外层 README 和 SHA256 校验文件保存到 Obsidian 仓库的 <code>AI项目笔记系统迁移包/</code>。后续同步整个仓库到云端即可同时保存笔记数据和恢复工具。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>AI项目笔记系统迁移包/README.md</code>：说明云端同步范围、旧设备停用 timer、新设备安装和验证步骤。</li>
+<li><code>AI项目笔记系统迁移包/obsidian-project-note-portable.tar.gz</code>：包含完整 Skill、脚本、systemd 单元、内层 README、安装器和文件清单。</li>
+<li><code>AI项目笔记系统迁移包/SHA256SUMS</code>：校验迁移压缩包完整性。</li>
+<li><code>install.sh</code>：接受新 Obsidian 仓库路径和 Skill 目录，自动替换旧设备路径；遇到已有 Skill、service 或 timer 时拒绝覆盖。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>sha256sum -c MANIFEST.sha256</code>：压缩包内所有文件校验通过。</li>
+<li>隔离 HOME/Vault 安装：Skill 路径和仓库路径替换正确，Skill 结构校验通过。</li>
+<li>隔离保存与合并：成功创建笔记、生成项目汇总并删除已合并源笔记。</li>
+<li>覆盖保护测试：存在自定义 systemd unit 时安装器在写入前拒绝，原文件保持不变。</li>
+<li><code>systemd-analyze --user verify</code>：迁移后 service 与 timer 语法通过。</li>
+<li>最终归档重新解压：文件列表、两层 SHA256、安装脚本语法和 Skill 校验全部通过。</li>
+<li>独立只读复审：最终无 HIGH/MEDIUM 问题。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>可移植配置不能只复制文件，还必须显式替换 Skill 安装路径、Obsidian 数据路径和 systemd <code>ExecStart</code> 路径。</li>
+<li>外层压缩包校验与内层逐文件清单可以分别发现传输损坏和包内文件篡改。</li>
+<li>云同步的文件锁通常不能跨设备可靠工作，同一个仓库应只让一台设备运行自动整理 timer。</li>
+<li>迁移包与数据放在同一 Obsidian 仓库中，可以避免工具和笔记备份生命周期分离。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>压缩包不重复包含 <code>AI项目笔记/</code> 和 <code>AI项目汇总/</code> 数据，避免云端产生两份笔记；数据通过整库同步迁移。</li>
+<li>默认采用 OpenAI 官方用户级 <code>$HOME/.agents/skills</code>，同时允许通过 <code>--skill-root</code> 兼容 <code>$HOME/.codex/skills</code>。</li>
+<li>安装器拒绝自动覆盖已有配置，迁移或升级时需要先显式重命名备份。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>真正切换设备前，先在旧设备执行 <code>systemctl --user disable --now obsidian-project-note-merge.timer</code>，等待云同步完成后再在新设备启用。</li>
+</ul>
+</main>
+<footer>由 Codex Skills/项目汇总.md 自动生成</footer>
+</body>
+</html>
