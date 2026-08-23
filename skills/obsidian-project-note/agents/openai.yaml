@@ -1,0 +1,6 @@
+interface:
+  display_name: "Obsidian 项目笔记"
+  short_description: "每次开发记录改动与学习要点，并按项目自动汇总整理"
+  default_prompt: "Use $obsidian-project-note to save this completed project task as an Obsidian learning note."
+policy:
+  allow_implicit_invocation: true
