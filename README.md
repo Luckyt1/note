@@ -18,4 +18,6 @@
 python3 scripts/export_summaries.py
 ```
 
-生成结果保存在 `HTML汇总/`，不需要安装第三方依赖。
+生成结果保存在 `HTML汇总/`，不需要安装第三方依赖。推送到 `main` 后，GitHub Actions 会自动刷新并部署站点：
+
+https://luckyt1.github.io/note/

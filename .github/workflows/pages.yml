@@ -1,0 +1,40 @@
+name: Deploy HTML summaries
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "AI项目汇总/**"
+      - "scripts/export_summaries.py"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Export summaries
+        run: python3 scripts/export_summaries.py
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: HTML汇总
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -7,7 +7,7 @@ import argparse
 import html
 import re
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -175,6 +175,34 @@ def render_document(markdown: str, source_label: str) -> str:
 """
 
 
+def render_index(exported: list[Path], output_root: Path) -> str:
+    links = "\n".join(
+        f'<li><a href="{quote(path.relative_to(output_root).as_posix())}">'
+        f"{html.escape(path.parent.name)}</a></li>"
+        for path in exported
+    )
+    return f"""<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 项目汇总</title>
+  <style>{STYLE}</style>
+</head>
+<body>
+<main>
+  <h1>AI 项目汇总</h1>
+  <p>这里汇集了 AI 参与项目记录、整理和知识沉淀的实验结果。</p>
+  <ul>
+{links}
+  </ul>
+</main>
+<footer>由 scripts/export_summaries.py 自动生成</footer>
+</body>
+</html>
+"""
+
+
 def export_summaries(source_root: Path, output_root: Path) -> list[Path]:
     sources = sorted(source_root.rglob("项目汇总.md"))
     if not sources:
@@ -188,6 +216,9 @@ def export_summaries(source_root: Path, output_root: Path) -> list[Path]:
         document = render_document(source.read_text(encoding="utf-8"), str(relative))
         destination.write_text(document, encoding="utf-8", newline="\n")
         exported.append(destination)
+    (output_root / "index.html").write_text(
+        render_index(exported, output_root), encoding="utf-8", newline="\n"
+    )
     return exported
 
 

@@ -42,6 +42,13 @@ project: demo
             self.assertNotIn("internal marker", first_result)
             self.assertNotIn("project: demo", first_result)
 
+            index = (output / "index.html").read_text(encoding="utf-8")
+            self.assertIn("AI 项目汇总", index)
+            self.assertIn(
+                'href="%E7%A4%BA%E4%BE%8B/%E9%A1%B9%E7%9B%AE%E6%B1%87%E6%80%BB.html"',
+                index,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
