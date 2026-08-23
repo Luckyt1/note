@@ -6,6 +6,7 @@ on:
     paths:
       - "AI项目汇总/**"
       - "scripts/export_summaries.py"
+      - "tests/test_export_summaries.py"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -27,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Test exporter
+        run: python3 -m unittest -v tests.test_export_summaries
       - name: Export summaries
         run: python3 scripts/export_summaries.py
       - name: Configure Pages
