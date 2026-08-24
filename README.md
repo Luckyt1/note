@@ -10,6 +10,21 @@
 
 项目仍处于实验阶段，内容、结构和工作流程会随着实践持续更新。
 
+## 每晚自动同步到 GitHub
+
+运行一次安装命令，即可在本机启用每天 20:00 自动提交并推送；当时设备关机时，会在下次启动后补跑：
+
+```bash
+python3 scripts/daily_git_sync.py --install
+```
+
+脚本发现 Git 冲突、疑似凭据、超过 90 MiB 的文件或未完成操作时会停止推送，保留现场供人工处理。可用下面的命令查看状态和日志：
+
+```bash
+systemctl --user status note-git-sync.timer
+journalctl --user-unit note-git-sync.service -n 50 --no-pager
+```
+
 ## 在其他项目中部署 Skill
 
 仓库中的 `skills/obsidian-project-note/` 是可直接审查和维护的 Skill 源码。运行下面的命令，可将它部署到另一个项目的 `.codex/skills/`：
