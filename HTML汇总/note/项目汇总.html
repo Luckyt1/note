@@ -4,23 +4,124 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>note 项目汇总</title>
-  <style>:root { color-scheme: light dark; }
-body { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; font: 16px/1.75 system-ui, sans-serif; }
-h1, h2, h3 { line-height: 1.3; margin-top: 1.8em; }
-h1 { border-bottom: 2px solid #8885; padding-bottom: .35em; }
-h2 { border-bottom: 1px solid #8885; padding-bottom: .25em; scroll-margin-top: 4rem; }
-code { background: #8882; border-radius: 4px; padding: .15em .35em; }
-pre { overflow-x: auto; background: #8882; border-radius: 8px; padding: 1rem; }
-pre code { background: none; padding: 0; }
-a { color: #3977d4; }
-.date-nav { position: sticky; top: 0; z-index: 1; display: flex; gap: .6rem; overflow-x: auto; padding: .75rem 0; background: Canvas; border-bottom: 1px solid #8885; }
-.date-nav strong, .date-nav a { flex: none; }
-blockquote { border-left: 4px solid #8886; margin-left: 0; padding-left: 1rem; color: #777; }
-hr { border: 0; border-top: 1px solid #8885; margin: 2rem 0; }
-footer { color: #777; font-size: .9rem; margin-top: 3rem; }</style>
+  <style>:root {
+  color-scheme: light;
+  --page: #f3f1ec;
+  --surface: #fffdf9;
+  --surface-soft: #f7f5f0;
+  --text: #272938;
+  --muted: #686b78;
+  --accent: #5856c7;
+  --accent-strong: #3f3da1;
+  --accent-soft: #eeedff;
+  --border: #dedbe3;
+  --code: #efedf5;
+  --shadow: 0 18px 50px #25213a14;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #17171c;
+    --surface: #202027;
+    --surface-soft: #282830;
+    --text: #ecebf2;
+    --muted: #aaa8b4;
+    --accent: #aaa7ff;
+    --accent-strong: #c3c1ff;
+    --accent-soft: #343250;
+    --border: #3a3944;
+    --code: #302f3a;
+    --shadow: 0 18px 50px #0005;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 2rem 1rem 4rem;
+  background: var(--page);
+  color: var(--text);
+  font: 16px/1.75 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  text-rendering: optimizeLegibility;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: 4px; background: var(--accent); }
+main {
+  width: min(100%, 960px);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 4rem);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+h1, h2, h3 { line-height: 1.3; text-wrap: balance; }
+h1 { margin: .25rem 0 1rem; font-size: clamp(2rem, 6vw, 3.8rem); letter-spacing: -.04em; }
+h2 { margin: 3.5rem 0 1.25rem; padding-left: .85rem; border-left: 4px solid var(--accent); font-size: clamp(1.35rem, 3vw, 1.75rem); scroll-margin-top: 6rem; }
+h3 { margin: 2rem 0 .75rem; font-size: 1.05rem; color: var(--accent-strong); }
+p { margin: .75rem 0 1.25rem; }
+ul, ol { padding-left: 1.4rem; }
+li { margin: .35rem 0; padding-left: .2rem; }
+li::marker { color: var(--accent); }
+a { color: var(--accent-strong); text-decoration-thickness: .08em; text-underline-offset: .2em; }
+a:hover { color: var(--accent); }
+a:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+code { overflow-wrap: anywhere; background: var(--code); border-radius: 6px; padding: .18em .42em; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .92em; }
+pre { overflow-x: auto; background: var(--code); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.2rem; line-height: 1.6; }
+pre code { overflow-wrap: normal; background: none; padding: 0; }
+.date-nav {
+  position: sticky;
+  top: .75rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  overflow-x: auto;
+  margin: -.5rem 0 2rem;
+  padding: .65rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px #25213a12;
+  scrollbar-width: thin;
+}
+.date-nav strong { padding: 0 .35rem; color: var(--muted); font-size: .9rem; white-space: nowrap; }
+.date-nav a { flex: none; display: inline-flex; align-items: center; min-height: 40px; padding: .35rem .75rem; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; font-weight: 650; text-decoration: none; }
+.date-nav a:hover { background: var(--accent-soft); border-color: var(--accent); }
+blockquote { margin: 1.5rem 0; padding: .9rem 1.1rem; background: var(--surface-soft); border-left: 4px solid var(--accent); border-radius: 0 10px 10px 0; color: var(--muted); }
+blockquote p { margin: 0; }
+hr { border: 0; border-top: 1px solid var(--border); margin: 3rem 0; }
+.hero { max-width: 680px; margin-bottom: 2.5rem; }
+.eyebrow { margin: 0 0 .5rem; color: var(--accent-strong); font-size: .78rem; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+.lead { color: var(--muted); font-size: clamp(1rem, 2.5vw, 1.18rem); }
+.project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .9rem; margin: 0; padding: 0; list-style: none; }
+.project-grid li { margin: 0; padding: 0; }
+.project-grid a { display: flex; align-items: center; justify-content: space-between; min-height: 88px; padding: 1rem 1.15rem; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 14px; font-weight: 700; text-decoration: none; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.project-grid a::after { content: "→"; margin-left: 1rem; color: var(--accent); font-size: 1.25rem; }
+.project-grid a:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: 0 10px 24px #25213a12; }
+footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); font-size: .85rem; text-align: center; }
+@media (max-width: 640px) {
+  body { padding: .75rem .65rem 2.5rem; }
+  body::before { height: 3px; }
+  main { padding: 1.4rem 1.1rem 2rem; border-radius: 18px; }
+  h1 { font-size: clamp(1.9rem, 11vw, 2.8rem); }
+  h2 { margin-top: 2.8rem; scroll-margin-top: 5.5rem; }
+  .date-nav { top: .4rem; margin-inline: -.35rem; }
+  .project-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .project-grid a { transition: none; }
+}
+@media print {
+  body { padding: 0; background: #fff; color: #000; }
+  body::before, .date-nav { display: none; }
+  main { width: 100%; padding: 0; border: 0; box-shadow: none; }
+  footer { width: 100%; }
+}</style>
 </head>
 <body>
-<main>
+<main class="document-page">
 <nav class="date-nav" aria-label="按日期查找笔记"><strong>按日期：</strong>
 <a href="#date-2026-08-23"><time datetime="2026-08-23">2026-08-23</time></a>
 <a href="#date-2026-08-24"><time datetime="2026-08-24">2026-08-24</time></a>

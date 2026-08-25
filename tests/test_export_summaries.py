@@ -46,6 +46,9 @@ project: demo
 
             self.assertEqual(first_result, destination.read_text(encoding="utf-8"))
             self.assertIn('<html lang="zh-CN">', first_result)
+            self.assertIn('<main class="document-page">', first_result)
+            self.assertIn("prefers-color-scheme: dark", first_result)
+            self.assertIn("prefers-reduced-motion: reduce", first_result)
             self.assertIn("<h1>示例汇总</h1>", first_result)
             self.assertIn("<code>代码</code>", first_result)
             self.assertIn("<strong>强调</strong>", first_result)
@@ -61,6 +64,8 @@ project: demo
 
             index = (output / "index.html").read_text(encoding="utf-8")
             self.assertIn("AI 项目汇总", index)
+            self.assertIn('<header class="hero">', index)
+            self.assertIn('<ul class="project-grid">', index)
             self.assertIn(
                 'href="%E7%A4%BA%E4%BE%8B/%E9%A1%B9%E7%9B%AE%E6%B1%87%E6%80%BB.html"',
                 index,
