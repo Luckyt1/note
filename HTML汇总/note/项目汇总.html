@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>note 项目汇总</title>
+  <style>:root { color-scheme: light dark; }
+body { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; font: 16px/1.75 system-ui, sans-serif; }
+h1, h2, h3 { line-height: 1.3; margin-top: 1.8em; }
+h1 { border-bottom: 2px solid #8885; padding-bottom: .35em; }
+h2 { border-bottom: 1px solid #8885; padding-bottom: .25em; scroll-margin-top: 4rem; }
+code { background: #8882; border-radius: 4px; padding: .15em .35em; }
+pre { overflow-x: auto; background: #8882; border-radius: 8px; padding: 1rem; }
+pre code { background: none; padding: 0; }
+a { color: #3977d4; }
+.date-nav { position: sticky; top: 0; z-index: 1; display: flex; gap: .6rem; overflow-x: auto; padding: .75rem 0; background: Canvas; border-bottom: 1px solid #8885; }
+.date-nav strong, .date-nav a { flex: none; }
+blockquote { border-left: 4px solid #8886; margin-left: 0; padding-left: 1rem; color: #777; }
+hr { border: 0; border-top: 1px solid #8885; margin: 2rem 0; }
+footer { color: #777; font-size: .9rem; margin-top: 3rem; }</style>
+</head>
+<body>
+<main>
+<nav class="date-nav" aria-label="按日期查找笔记"><strong>按日期：</strong>
+<a href="#date-2026-08-23"><time datetime="2026-08-23">2026-08-23</time></a>
+<a href="#date-2026-08-24"><time datetime="2026-08-24">2026-08-24</time></a>
+<a href="#date-2026-08-25"><time datetime="2026-08-25">2026-08-25</time></a>
+</nav>
+<h1>note 项目汇总</h1>
+<hr>
+<h2 id="date-2026-08-23">初始化 GitHub 同步</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T19:15:48+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_19-16-05_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>将 Obsidian 笔记库初始化为本地 Git 仓库，并准备适合多设备同步的忽略规则；GitHub 远程仓库仍待创建和首次推送。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>.gitignore</code>：忽略每台设备独有的 Obsidian 工作区状态、系统垃圾文件和本地合并锁。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>git check-ignore -v</code>：确认 <code>.obsidian/workspace.json</code> 与 <code>AI项目汇总/.merge.lock</code> 被正确忽略。</li>
+<li>凭据模式扫描：未发现明显的 token、密码或私钥。</li>
+<li><code>ssh -T git@github.com</code>：账号 <code>Luckyt1</code> 的 GitHub SSH 认证成功。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>Git 适合跨设备同步 Markdown 和 Obsidian 配置，但设备独有的工作区布局应忽略，避免无意义冲突。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>采用原生 Git 与 SSH，不安装额外同步工具；远程仓库不存在时不猜测可见性，留待创建后连接。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>在 GitHub 创建空仓库 <code>Luckyt1/note</code>，添加远程地址并首次推送。</li>
+</ul>
+<hr>
+<h2>补充 AI 笔记实验说明</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T19:26:24+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_19-26-41_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>为仓库补充根目录 README，说明项目用于探索 AI 参与笔记记录、整理和知识沉淀的可能性，并明确项目会持续更新。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>README.md</code>：新增项目定位、当前实验方向和持续演进说明。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>git diff --check -- README.md</code>：通过，未发现空白字符错误。</li>
+<li>README 内容检查：标题、项目目标、实验方向与持续更新说明完整。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>实验型仓库的 README 应优先回答“为什么存在、正在尝试什么、是否仍在演进”。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>保持说明简短，不提前承诺尚未实现的功能或复杂路线图。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>随实验内容变化持续更新 README。</li>
+</ul>
+<hr>
+<h2>自动导出项目汇总 HTML</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T19:33:04+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_19-33-24_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>新增批量导出脚本，可自动发现 <code>AI项目汇总/</code> 下的项目总结并生成便于浏览和分享的独立 HTML 文件，同时补充使用说明与回归测试。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>scripts/export_summaries.py</code>：使用 Python 标准库解析当前汇总使用的 Markdown 结构，移除 frontmatter 和内部注释，安全生成带基础样式的 HTML。</li>
+<li><code>tests/test_export_summaries.py</code>：验证格式转换、危险原始 HTML 转义、元数据隐藏和重复导出的确定性。</li>
+<li><code>README.md</code>：补充 HTML 导出命令和输出目录。</li>
+<li><code>.gitignore</code>：忽略 Python 缓存文件。</li>
+<li><code>HTML汇总/</code>：生成现有三个项目的 HTML 汇总。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -m py_compile scripts/export_summaries.py tests/test_export_summaries.py</code>：通过。</li>
+<li><code>python3 -m unittest -v tests.test_export_summaries</code>：1 项测试通过。</li>
+<li><code>python3 scripts/export_summaries.py</code>：成功生成 3 个 HTML 文件，重复执行结果稳定。</li>
+<li><code>html.parser</code> 产物检查：三个文件均可解析、各含一个一级标题，且未泄露 frontmatter 与内部来源注释。</li>
+<li><code>git diff --check</code>：通过。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>针对格式固定的内部 Markdown，支持实际使用的语法子集比引入完整转换依赖更便于跨设备运行；同时必须先转义原始 HTML，避免把笔记内容变成可执行代码。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>使用 Python 标准库实现当前汇总需要的标题、段落、列表、代码、强调、链接和引用转换；未引入第三方 Markdown 包，也未实现当前内容未使用的复杂表格和嵌套列表。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>汇总内容更新后重新运行 <code>python3 scripts/export_summaries.py</code> 即可刷新 HTML；若未来使用复杂 Markdown，再扩展对应语法。</li>
+</ul>
+<hr>
+<h2>部署 HTML 汇总到 GitHub Pages</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T19:40:27+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_19-40-46_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>将 HTML 导出脚本、测试和生成结果上传到 GitHub，并加入自动生成首页与 GitHub Pages 部署工作流；远程仓库尚未首次启用 Pages，因此站点当前未上线。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>scripts/export_summaries.py</code>：导出汇总后自动生成包含所有项目链接的 <code>HTML汇总/index.html</code>。</li>
+<li><code>tests/test_export_summaries.py</code>：增加首页及 URL 编码链接验证。</li>
+<li><code>.github/workflows/pages.yml</code>：在 <code>main</code> 的汇总或脚本变化后，使用 GitHub 官方 Actions 自动导出并部署静态站点。</li>
+<li><code>README.md</code>：补充预期站点地址。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -m py_compile</code>：脚本与测试语法通过。</li>
+<li><code>python3 -m unittest -v tests.test_export_summaries</code>：1 项测试通过。</li>
+<li><code>python3 scripts/export_summaries.py</code>：3 个项目页面和 1 个站点首页生成成功。</li>
+<li><code>git push origin main</code>：提交已上传到 GitHub。</li>
+<li><code>curl https://luckyt1.github.io/note/</code>：连续 6 次返回 404，确认仓库尚未首次启用 GitHub Pages。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>GitHub Pages 自定义工作流可以持续部署静态产物，但首次启用 Pages 属于仓库管理操作；默认 <code>GITHUB_TOKEN</code> 不能代替用户打开该功能。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>采用 GitHub 官方 Pages Actions，而不是维护容易失去同步的 <code>gh-pages</code> 分支；保留 Markdown 为源内容，工作流每次重新生成 HTML。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>在仓库 Settings → Pages 中将 Build and deployment 的 Source 设为 GitHub Actions；私有仓库还需确认当前 GitHub 套餐支持 Pages。</li>
+</ul>
+<hr>
+<h2>完成 GitHub Pages 上线</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T19:47:49+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_19-48-08_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>在仓库公开并启用 Pages 后重新触发自动部署，HTML 汇总站点已成功上线；部署工作流同时增加了导出器测试门禁。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>.github/workflows/pages.yml</code>：部署前运行导出器单元测试，并让测试文件变化触发 Pages 工作流。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li>GitHub API：仓库 <code>private=false</code>、<code>has_pages=true</code>。</li>
+<li>GitHub Actions <code>32637505036</code>：测试、导出、Pages 配置、产物上传和部署步骤全部成功。</li>
+<li><code>https://luckyt1.github.io/note/</code>：HTTP 200，首页标题正确并包含 3 个项目链接。</li>
+<li><code>python3 -m unittest -v tests.test_export_summaries</code>：1 项测试通过。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>仓库可见性和 Pages 启用状态改变后，需要重新触发此前失败的工作流；将测试放在上传前可避免损坏的导出器发布到线上。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>通过有实际价值的工作流测试改进触发重试，没有制造空提交或绕过 Pages 状态检查。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>无。</li>
+</ul>
+<hr>
+<h2>增加项目级 Skill 部署器</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T20:04:12+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_20-04-41_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>将 <code>obsidian-project-note</code> 的可维护源码纳入笔记仓库，并新增零依赖部署脚本，可快速安装到另一个项目的 <code>.codex/skills/</code>。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>skills/obsidian-project-note/</code>：加入 Skill 指令、界面元数据及保存与汇总脚本源码。</li>
+<li><code>scripts/deploy_obsidian_skill.py</code>：验证目标项目和 Obsidian 仓库、改写安装路径、原子部署 Skill，并在强制更新时保留旧版本备份。</li>
+<li><code>tests/test_deploy_obsidian_skill.py</code>：覆盖首次安装、默认拒绝覆盖、路径改写及强制更新备份。</li>
+<li><code>README.md</code>：补充项目级部署命令及与新设备迁移包的用途区别。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>quick_validate.py skills/obsidian-project-note</code>：Skill 结构与 frontmatter 通过。</li>
+<li><code>python3 -m py_compile</code>：部署脚本、测试和 Skill 脚本语法通过。</li>
+<li><code>python3 -m unittest discover -s tests -v</code>：2 项测试通过。</li>
+<li>隔离项目 CLI 冒烟测试：Skill 安装成功，目标路径和笔记库路径改写正确，部署后再次通过 Skill 校验。</li>
+<li><code>git diff --check</code>：通过。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>项目级 Skill 应安装到目标项目的 <code>.codex/skills/</code>；备份若留在该扫描目录中可能被误识别为重复 Skill，因此应放到独立的 <code>.codex/skill-backups/</code>。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>复用 Python 标准库完成复制、校验和安全替换，不引入依赖；新设备的 systemd 定时器仍由现有便携迁移包负责。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>无。</li>
+</ul>
+<hr>
+<h2 id="date-2026-08-24">增加 Git 日报与周报自动整理</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T02:09:38+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_02-09-51_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>实现可定时执行的 Git 报告脚本：每天快进拉取并生成日报，每周四汇总周五至周四的日报，且仅在周报成功写入后删除源日报；随后自动提交报告、变基合并远端更新并推送回云端。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>scripts/git_reports.py</code>：增加安全拉取、提交统计、日报生成、周四周报、成功后清理，以及报告专属提交和云端同步逻辑。</li>
+<li><code>tests/test_git_reports.py</code>：验证日报生成及周报成功后删除覆盖范围内日报。</li>
+<li><code>README.md</code>：补充手动运行、补跑参数和 cron 配置示例。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -m unittest -v tests.test_git_reports tests.test_export_summaries tests.test_deploy_obsidian_skill</code>：3 项测试全部通过。</li>
+<li><code>python3 -m py_compile scripts/git_reports.py tests/test_git_reports.py</code>：语法检查通过。</li>
+<li><code>git diff --check</code>：未发现空白字符错误。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>对“生成后删除”流程，应先原子持久化汇总产物，再逐一删除源文件，避免写入失败造成数据丢失。</li>
+<li>定时任务生成前使用 <code>git pull --ff-only</code>，提交报告后再使用 <code>git pull --rebase</code>，可以吸收并行出现的远端提交而不制造合并提交。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>周报周期采用上周五至本周四，使每次周四清理后不存在无法归属的周五日报；日报基于 Git 元数据确定性生成，不依赖外部 AI API。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>需要用户将 README 中的 cron 配置安装到实际系统。</li>
+</ul>
+<hr>
+<h2>增加每日 Git 自动同步</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T11:59:44+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_12-00-16_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>为笔记仓库增加每天 20:00 自动提交、整合远程更新并推送到 GitHub 的用户级定时任务；设备当时关机时会在下次启动后补跑。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>scripts/daily_git_sync.py</code>：实现安全暂存、Lore 格式提交、远程 fetch/rebase/push、疑似凭据与大文件拦截，以及 systemd timer 安装。</li>
+<li><code>tests/test_daily_git_sync.py</code>：覆盖双仓库并发更新、自动 rebase/push、凭据拒绝、暂存状态恢复和 20:00 持久化定时器。</li>
+<li><code>README.md</code>：补充安装、状态和日志查看命令。</li>
+<li><code>note-git-sync.service/timer</code>：安装到用户 systemd，定时器已启用。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -m unittest discover -s tests -v</code>：6 项测试通过。</li>
+<li><code>systemd-analyze verify</code>：新增 service 与 timer 无自身配置错误。</li>
+<li><code>systemctl --user</code>：timer 为 enabled/active，下一次触发为 <code>2026-08-24 20:00:00 CST</code>，<code>Persistent=yes</code>。</li>
+<li><code>loginctl show-user</code>：<code>Linger=yes</code>，退出登录后用户服务仍可运行。</li>
+<li>GitHub <code>main</code>：远程提交为 <code>ff50070</code>，与本地自动同步实现一致。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>无人值守同步应先保存本地变化，再以 rebase 整合远程历史；公开仓库还应在提交前拦截常见凭据和超大文件，并在失败时恢复原 Git 暂存状态。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>使用 systemd timer 而不是 cron，以获得错过补跑、统一日志和用户服务生命周期；冲突时停止而不强推。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>首次实际定时运行后，可用 <code>journalctl --user-unit note-git-sync.service -n 50 --no-pager</code> 查看结果。</li>
+</ul>
+<hr>
+<h2 id="date-2026-08-25">为 HTML 项目汇总增加日期导航</h2>
+<ul>
+<li>创建时间：<code>2026-08-25T11:30:12+08:00</code></li>
+<li>原始笔记：<code>2026-08-25_11-30-46_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>在每个项目汇总网页顶部增加按日期导航，点击日期可直接跳到当天第一篇笔记，并在长页面滚动时保持导航可见。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>scripts/export_summaries.py</code>：从现有“创建时间”元数据提取去重日期，生成日期导航和对应标题锚点。</li>
+<li><code>tests/test_export_summaries.py</code>：覆盖多日期、同日多篇去重以及无日期时不渲染空导航。</li>
+<li><code>HTML汇总/</code>：重新生成现有项目网页和首页索引。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -m unittest discover -s tests -v</code>：7 项测试全部通过。</li>
+<li><code>python3 -m py_compile scripts/export_summaries.py tests/test_export_summaries.py</code>：语法检查通过。</li>
+<li><code>python3 scripts/export_summaries.py</code>：成功生成 6 个项目页面。</li>
+<li>生成页面锚点核对：6 个项目页面的日期链接均存在同名目标锚点。</li>
+<li><code>git diff --check</code>：通过。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>结构稳定的 Markdown 已有时间元数据时，静态 HTML 锚点就能提供足够好的日期查找体验，无需引入 JavaScript 或第三方日期组件。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>选择页面内的去重日期锚点，不增加搜索后端、日期选择器或新依赖；当日期数量很多时，导航条使用横向滚动保持单行。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>无</li>
+</ul>
+<hr>
+<h2>为网页汇总增加日期导航</h2>
+<ul>
+<li>创建时间：<code>2026-08-25T11:40:51+08:00</code></li>
+<li>原始笔记：<code>2026-08-25_11-41-11_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>网页化后的项目汇总顶部会按笔记日期显示固定导航，点击日期可直接跳到当天第一篇记录，便于快速查找某一号的笔记。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>scripts/export_summaries.py</code>：从每篇记录的创建时间提取日期，为当天首篇记录生成锚点，并渲染可横向滚动的固定日期导航。</li>
+<li><code>tests/test_export_summaries.py</code>：覆盖跨日期、同日去重、锚点跳转和无日期时不显示导航。</li>
+<li><code>HTML汇总/</code>：重新生成当前 6 个项目的网页和总索引。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -m unittest discover -s tests -v</code>：7 项测试全部通过。</li>
+<li><code>python3 scripts/export_summaries.py</code>：成功生成 6 个项目网页。</li>
+<li><code>git diff --check</code>：通过。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>日期导航可以直接复用汇总中已有的创建时间和浏览器原生锚点，无需 JavaScript 或第三方依赖；同日只锚定第一篇即可避免重复入口。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>采用页面内日期锚点和 sticky 导航，没有引入日历组件；当前日期数量较少，横向滚动足以覆盖移动端和桌面端。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>无。</li>
+</ul>
+</main>
+<footer>由 note/项目汇总.md 自动生成</footer>
+</body>
+</html>

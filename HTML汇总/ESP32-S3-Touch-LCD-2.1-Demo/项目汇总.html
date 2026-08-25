@@ -8,20 +8,25 @@
 body { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; font: 16px/1.75 system-ui, sans-serif; }
 h1, h2, h3 { line-height: 1.3; margin-top: 1.8em; }
 h1 { border-bottom: 2px solid #8885; padding-bottom: .35em; }
-h2 { border-bottom: 1px solid #8885; padding-bottom: .25em; }
+h2 { border-bottom: 1px solid #8885; padding-bottom: .25em; scroll-margin-top: 4rem; }
 code { background: #8882; border-radius: 4px; padding: .15em .35em; }
 pre { overflow-x: auto; background: #8882; border-radius: 8px; padding: 1rem; }
 pre code { background: none; padding: 0; }
 a { color: #3977d4; }
+.date-nav { position: sticky; top: 0; z-index: 1; display: flex; gap: .6rem; overflow-x: auto; padding: .75rem 0; background: Canvas; border-bottom: 1px solid #8885; }
+.date-nav strong, .date-nav a { flex: none; }
 blockquote { border-left: 4px solid #8886; margin-left: 0; padding-left: 1rem; color: #777; }
 hr { border: 0; border-top: 1px solid #8885; margin: 2rem 0; }
 footer { color: #777; font-size: .9rem; margin-top: 3rem; }</style>
 </head>
 <body>
 <main>
+<nav class="date-nav" aria-label="按日期查找笔记"><strong>按日期：</strong>
+<a href="#date-2026-08-23"><time datetime="2026-08-23">2026-08-23</time></a>
+</nav>
 <h1>ESP32-S3-Touch-LCD-2.1-Demo 项目汇总</h1>
 <hr>
-<h2>为圆形屏幕相册增加 GIF 上传与播放</h2>
+<h2 id="date-2026-08-23">为圆形屏幕相册增加 GIF 上传与播放</h2>
 <ul>
 <li>创建时间：<code>2026-08-23T15:00:27+08:00</code></li>
 <li>原始笔记：<code>2026-08-23_15-01-09_ESP32-S3-Touch-LCD-2.1-Demo.md</code></li>
@@ -244,6 +249,102 @@ footer { color: #777; font-size: .9rem; margin-top: 3rem; }</style>
 <h3>后续事项</h3>
 <ul>
 <li>在实际圆屏上连续切换不同尺寸的 JPG、JPG/GIF 混合内容，并测试全屏模式，确认无下坠和残影。</li>
+</ul>
+<hr>
+<h2>增加眨眼动画展示界面</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T19:14:45+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_19-15-20_ESP32-S3-Touch-LCD-2.1-Demo.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>在圆屏主菜单增加独立的眨眼动画功能，复用原有表情系统展示随机双眼眨眼、表情切换和偶尔单眼眨眼，并支持返回主菜单。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>Arduino/examples/LVGL_Arduino/LVGL_Arduino.ino</code>：新增 Blinking Eyes 菜单项、界面状态和事件；接入现有眼睛动画；退出时清理定时器及 EyeState/BrowState 动画，避免重复进入后任务叠加。</li>
+<li><code>Arduino/examples/LVGL_Arduino/DISPLAY_SETUP.md</code>：补充眨眼动画入口及行为说明。</li>
+<li><code>Arduino/examples/LVGL_Arduino/firmware/LVGL_Arduino_full.bin</code>：同步生成包含新功能的完整迁移镜像。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>arduino-cli compile</code>：ESP32-S3、16 MB Flash、Custom 双 OTA 分区编译通过，程序大小 1,279,185 字节。</li>
+<li><code>esptool image_info</code>：Checksum 和 Validation Hash 均有效。</li>
+<li><code>flash_firmware.py --check-only</code> 与 <code>sha256sum</code>：完整镜像结构正确，并与本次 merged.bin 完全一致。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>LVGL 界面删除前应先停止引用界面对象的定时器和动画，否则回调可能访问已销毁对象；重复进入动态页面还会造成定时器叠加。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>复用项目已有眼睛、眉毛、瞳孔和表情动画代码，只增加菜单路由与生命周期管理，没有新增图像资源或动画依赖。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>在实际圆屏上测试菜单三按钮布局、眨眼节奏及多次进入退出是否稳定。</li>
+</ul>
+<hr>
+<h2>为烧录脚本增加串口临时授权</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T19:20:40+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_19-21-07_ESP32-S3-Touch-LCD-2.1-Demo.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>烧录脚本增加 Linux 串口权限修复选项，可在用户确认后通过 sudo 临时授予串口读写权限，并继续执行硬件检测和烧录。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>Arduino/examples/LVGL_Arduino/firmware/flash_firmware.py</code>：新增 <code>--fix-port-permission</code>，只允许 <code>/dev/ttyACM数字</code> 和 <code>/dev/ttyUSB数字</code>，执行 <code>sudo chmod a+rw</code> 后重新检查权限；同时提示 dialout 长期修复命令。</li>
+<li><code>Arduino/examples/LVGL_Arduino/DISPLAY_SETUP.md</code>：补充临时串口授权的使用命令和有效期说明。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>py_compile</code> 与 <code>--help</code>：语法和新参数解析通过。</li>
+<li>模拟无权限串口：确认生成并以参数列表执行 <code>sudo chmod a+rw /dev/ttyACM7</code>，授权后复检通过。</li>
+<li>无效设备路径：在调用 sudo 前被正确拒绝。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>临时 chmod 可以让当前烧录立即继续，但 USB 重连后会失效；将用户加入 dialout 组才是 Linux 的长期方案。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>权限修改必须显式传参并二次确认，且限制串口路径范围；没有默认自动提权，也没有对任意 <code>/dev</code> 设备开放 chmod。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>在实际无串口权限的 Linux 用户环境中运行一次，验证 sudo 提示与烧录衔接。</li>
+</ul>
+<hr>
+<h2>将眨眼界面简化为双眼</h2>
+<ul>
+<li>创建时间：<code>2026-08-23T19:38:41+08:00</code></li>
+<li>原始笔记：<code>2026-08-23_19-39-11_ESP32-S3-Touch-LCD-2.1-Demo.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>眨眼界面简化为两个带固定瞳孔的眼睛，仅按随机时间间隔同步眨眼，不再展示眉毛、嘴巴、状态文字、复杂表情或单眼眨眼。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>Arduino/examples/LVGL_Arduino/LVGL_Arduino.ino</code>：删除眉毛与完整表情姿态系统、瞳孔变化和第二个表情定时器，只保留眼睛高度动画、双眼同步眨眼及退出清理。</li>
+<li><code>Arduino/examples/LVGL_Arduino/Face_Types.h</code>：只保留 Arduino 自动原型生成所需的 EyeState 前置声明。</li>
+<li><code>Arduino/examples/LVGL_Arduino/DISPLAY_SETUP.md</code>：更新为双眼同步眨眼说明。</li>
+<li><code>Arduino/examples/LVGL_Arduino/firmware/LVGL_Arduino_full.bin</code>：同步生成简化后的完整迁移镜像。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>arduino-cli compile</code>：ESP32-S3、16 MB Flash、Custom 双 OTA 分区编译通过，程序大小 1,277,129 字节。</li>
+<li>源码搜索：Brow、FacePose、FaceExpression、嘴巴、文字、单眼眨眼和表情定时器均已移除。</li>
+<li><code>esptool image_info</code>、<code>flash_firmware.py --check-only</code> 与 <code>sha256sum</code>：镜像校验有效，完整 BIN 与本次 merged.bin 一致。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>Arduino 会为 ino 函数自动生成原型；函数参数使用自定义结构体时，需要在自动原型之前通过头文件提供前置声明。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>保留固定瞳孔以维持“眼睛”识别度，其余所有表情元素和变化逻辑删除，只留下一个随机周期眨眼定时器。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>在实际圆屏确认双眼大小、间距和闭合效果符合预期。</li>
 </ul>
 </main>
 <footer>由 ESP32-S3-Touch-LCD-2.1-Demo/项目汇总.md 自动生成</footer>

@@ -16,11 +16,13 @@ STYLE = """
 body { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; font: 16px/1.75 system-ui, sans-serif; }
 h1, h2, h3 { line-height: 1.3; margin-top: 1.8em; }
 h1 { border-bottom: 2px solid #8885; padding-bottom: .35em; }
-h2 { border-bottom: 1px solid #8885; padding-bottom: .25em; }
+h2 { border-bottom: 1px solid #8885; padding-bottom: .25em; scroll-margin-top: 4rem; }
 code { background: #8882; border-radius: 4px; padding: .15em .35em; }
 pre { overflow-x: auto; background: #8882; border-radius: 8px; padding: 1rem; }
 pre code { background: none; padding: 0; }
 a { color: #3977d4; }
+.date-nav { position: sticky; top: 0; z-index: 1; display: flex; gap: .6rem; overflow-x: auto; padding: .75rem 0; background: Canvas; border-bottom: 1px solid #8885; }
+.date-nav strong, .date-nav a { flex: none; }
 blockquote { border-left: 4px solid #8886; margin-left: 0; padding-left: 1rem; color: #777; }
 hr { border: 0; border-top: 1px solid #8885; margin: 2rem 0; }
 footer { color: #777; font-size: .9rem; margin-top: 3rem; }
@@ -68,7 +70,7 @@ def without_front_matter(lines: list[str]) -> list[str]:
     return lines
 
 
-def markdown_body(markdown: str) -> tuple[str, str]:
+def markdown_body(markdown: str) -> tuple[str, str, list[str]]:
     lines = without_front_matter(markdown.splitlines())
     title = next(
         (match.group(1) for line in lines if (match := re.match(r"^#\s+(.+)$", line))),
@@ -80,6 +82,19 @@ def markdown_body(markdown: str) -> tuple[str, str]:
     code_lines: list[str] = []
     in_code = False
     in_comment = False
+    entry_dates: dict[int, str] = {}
+    pending_heading: int | None = None
+    for line_number, line in enumerate(lines):
+        stripped = line.strip()
+        if re.match(r"^##\s+", stripped):
+            pending_heading = line_number
+        elif pending_heading is not None and (
+            match := re.match(r"^-\s+创建时间：`(\d{4}-\d{2}-\d{2})", stripped)
+        ):
+            entry_dates[pending_heading] = match.group(1)
+            pending_heading = None
+    dates = list(dict.fromkeys(entry_dates.values()))
+    anchored_dates: set[str] = set()
 
     def flush_paragraph() -> None:
         if paragraph:
@@ -92,7 +107,7 @@ def markdown_body(markdown: str) -> tuple[str, str]:
             output.append(f"</{list_tag}>")
             list_tag = None
 
-    for line in lines:
+    for line_number, line in enumerate(lines):
         stripped = line.strip()
         if in_comment:
             if "-->" in stripped:
@@ -126,7 +141,14 @@ def markdown_body(markdown: str) -> tuple[str, str]:
             flush_paragraph()
             close_list()
             level = len(heading.group(1))
-            output.append(f"<h{level}>{inline_markup(heading.group(2))}</h{level}>")
+            date = entry_dates.get(line_number)
+            anchor = ""
+            if date and date not in anchored_dates:
+                anchor = f' id="date-{date}"'
+                anchored_dates.add(date)
+            output.append(
+                f"<h{level}{anchor}>{inline_markup(heading.group(2))}</h{level}>"
+            )
         elif stripped == "---":
             flush_paragraph()
             close_list()
@@ -152,11 +174,25 @@ def markdown_body(markdown: str) -> tuple[str, str]:
         output.append(f"<pre><code>{html.escape(chr(10).join(code_lines))}</code></pre>")
     flush_paragraph()
     close_list()
-    return title, "\n".join(output)
+    return title, "\n".join(output), dates
+
+
+def render_date_navigation(dates: list[str]) -> str:
+    if not dates:
+        return ""
+    links = "\n".join(
+        f'<a href="#date-{date}"><time datetime="{date}">{date}</time></a>'
+        for date in dates
+    )
+    return (
+        '<nav class="date-nav" aria-label="按日期查找笔记">'
+        f"<strong>按日期：</strong>\n{links}\n</nav>"
+    )
 
 
 def render_document(markdown: str, source_label: str) -> str:
-    title, body = markdown_body(markdown)
+    title, body, dates = markdown_body(markdown)
+    navigation = render_date_navigation(dates)
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -167,6 +203,7 @@ def render_document(markdown: str, source_label: str) -> str:
 </head>
 <body>
 <main>
+{navigation}
 {body}
 </main>
 <footer>由 {html.escape(source_label)} 自动生成</footer>

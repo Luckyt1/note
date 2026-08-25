@@ -8,20 +8,27 @@
 body { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; font: 16px/1.75 system-ui, sans-serif; }
 h1, h2, h3 { line-height: 1.3; margin-top: 1.8em; }
 h1 { border-bottom: 2px solid #8885; padding-bottom: .35em; }
-h2 { border-bottom: 1px solid #8885; padding-bottom: .25em; }
+h2 { border-bottom: 1px solid #8885; padding-bottom: .25em; scroll-margin-top: 4rem; }
 code { background: #8882; border-radius: 4px; padding: .15em .35em; }
 pre { overflow-x: auto; background: #8882; border-radius: 8px; padding: 1rem; }
 pre code { background: none; padding: 0; }
 a { color: #3977d4; }
+.date-nav { position: sticky; top: 0; z-index: 1; display: flex; gap: .6rem; overflow-x: auto; padding: .75rem 0; background: Canvas; border-bottom: 1px solid #8885; }
+.date-nav strong, .date-nav a { flex: none; }
 blockquote { border-left: 4px solid #8886; margin-left: 0; padding-left: 1rem; color: #777; }
 hr { border: 0; border-top: 1px solid #8885; margin: 2rem 0; }
 footer { color: #777; font-size: .9rem; margin-top: 3rem; }</style>
 </head>
 <body>
 <main>
+<nav class="date-nav" aria-label="按日期查找笔记"><strong>按日期：</strong>
+<a href="#date-2026-08-23"><time datetime="2026-08-23">2026-08-23</time></a>
+<a href="#date-2026-08-24"><time datetime="2026-08-24">2026-08-24</time></a>
+<a href="#date-2026-08-25"><time datetime="2026-08-25">2026-08-25</time></a>
+</nav>
 <h1>bxi_rc_slam 项目汇总</h1>
 <hr>
-<h2>延时启动 Nav2 生命周期管理器</h2>
+<h2 id="date-2026-08-23">延时启动 Nav2 生命周期管理器</h2>
 <ul>
 <li>创建时间：<code>2026-08-23T14:53:50+08:00</code></li>
 <li>原始笔记：<code>2026-08-23_14-54-26_bxi_rc_slam.md</code></li>
@@ -371,6 +378,629 @@ footer { color: #777; font-size: .9rem; margin-top: 3rem; }</style>
 <h3>后续事项</h3>
 <ul>
 <li>需要在真机狭窄区域和目标点附近执行导航任务，确认 forward-only 约束下的可达性与转向空间满足现场需求。</li>
+</ul>
+<hr>
+<h2 id="date-2026-08-24">修复后方目标不触发原地转向</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T13:34:13+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_13-34-44_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>修复前向-only Nav2 控制链在目标位于机器人后方时绕过 Rotation Shim、仅输出约 0.06 rad/s 并在 5 秒后无进展失败的问题。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/src/goal_rotation_shim_controller.cpp</code>：删除反向路径检测分支，新目标统一激活 Rotation Shim。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：增加前向-only 新目标必须触发朝向校正的回归契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -m pytest -q ... -k goal_rotation_shim_reorients_for_every_new_forward_only_goal</code>：修复前失败、修复后通过。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：通过。</li>
+<li>排除既有 scan 配置不一致测试后，导航契约为 25 passed、3 skipped。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>Rotation Shim 配置为 0.8 rad/s 且单周期允许 0.8 rad/s 加速时，里程计接近零但命令长期只有 0.06，说明命令来自主控制器而非 Shim。</li>
+<li>前向-only 规划与控制链不应保留“反向路径关闭朝向校正”的分支，否则后方目标会落入既不能倒退、又缺少角度 critic 的 MPPI。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>选择删除冲突分支，没有新增 MPPI critic 或最低角速度补丁；这些方案会掩盖 Shim 未介入的根因并增加调参风险。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>需要在仿真或实机重新发送后方目标，确认 <code>/cmd_vel.angular.z</code> 从约 0.06 提升到接近 0.8，并产生大于 0.15 rad 的实际转动。</li>
+<li>包级测试仍有一个与本次改动无关的既有失败：<code>scan_bodyframe_pub_en</code> 当前为 True，而契约期待 False。</li>
+</ul>
+<hr>
+<h2>修复 Rotation Shim 因延迟 TF 永久回退</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T13:43:59+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_13-44-31_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>修复新目标首周期因 Point-LIO TF 延迟发生未来外推失败后，Humble Rotation Shim 永久回退 MPPI、后方目标最大角速度仅约 0.1 rad/s 的问题。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/src/goal_rotation_shim_controller.cpp</code>：初始朝向校正改用最新可用 TF；变换暂不可用时输出零速度并保留下一周期重试。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：增加延迟 TF 重试契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li>新回归契约在修复前失败、修复后与后方目标 Shim 契约共 2 项通过。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：通过。</li>
+<li>排除既有 scan 配置不一致测试后：26 passed、3 skipped。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>Humble Rotation Shim 会给采样路径点写入当前时间；当定位 TF 固定落后时，第一次未来外推失败会清除 <code>path_updated_</code>，后续直接进入主控制器。</li>
+<li>对延迟传感器链，使用最新共同 TF 比增加 transform tolerance 更能解决持续的未来外推；失败时必须保留状态重试，不能静默降级。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>只覆盖初始路径朝向校正，没有新增 MPPI critic 或提高最低转速，因为日志证明根因是 Shim 在 TF 失败后未介入。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>需要重启 Nav2 后复测后方目标，确认 <code>/cmd_vel.angular.z</code> 接近 0.8 rad/s。</li>
+<li>既有 <code>scan_bodyframe_pub_en</code> 配置契约失败仍未纳入本次修复。</li>
+</ul>
+<hr>
+<h2>为双足导航增加最低原地旋转速度</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T14:13:00+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_14-13-35_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>自定义 Rotation Shim 现在会把低于双足步态有效区间的原地角速度提升到可配置下限，避免 Nav2 持续输出小角速度但机器人没有明显转动，最终被进度检查中止。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/src/goal_rotation_shim_controller.cpp</code>：新增 <code>min_in_place_angular_vel</code> 参数，仅对近乎零线速度的旋转命令执行带符号的最低速度限幅，并在提速后重新执行 footprint 碰撞预测。</li>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：将双足机器人的最低有效原地角速度配置为 <code>0.25 rad/s</code>。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：新增最低旋转速度配置、限幅逻辑和碰撞复检契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>colcon build --packages-select nav --symlink-install</code>：构建通过。</li>
+<li><code>pytest -k goal_rotation_shim</code>：3 条定向测试通过。</li>
+<li>排除既有 scan 配置契约后运行完整测试：27 passed，3 skipped。</li>
+<li><code>ament_uncrustify src/bxi_nav/src/goal_rotation_shim_controller.cpp</code>：无格式问题。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>双足机器人的速度命令存在实际动作死区；控制器的数学非零速度不等于执行机构会产生可观测运动。</li>
+<li>对控制命令做最低速度限幅后，应重新进行碰撞预测，不能复用较小命令的安全检查结果。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>只提升纯原地旋转命令，不全局放大 MPPI 边走边转的角速度，避免改变规划轨迹和步态稳定性。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>实机确认 <code>0.25 rad/s</code> 是否稳定越过步态死区；完整测试仍有既有的 <code>scan_bodyframe_pub_en=True</code> 配置契约失败，与本次改动无关。</li>
+</ul>
+<hr>
+<h2>修复发送短目标后导航卡死</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T14:44:57+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_14-45-41_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>修复自定义 Nav2 旋转 shim 在短路径无法取得前视采样点时持续输出零速度的问题，使控制流降级到原生控制器继续处理目标，同时保留 TF 暂时不可用时的逐周期重试。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/src/goal_rotation_shim_controller.cpp</code>：将路径采样失败与 TF 失败分开处理；短路径清除初始对齐状态并交还基类控制器，TF 失败继续等待恢复。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：增加短路径不得锁死、TF 重试不得被清除的回归契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>colcon build --packages-select nav --symlink-install</code>：<code>goal_rotation_shim_controller</code> 重新编译和链接成功。</li>
+<li><code>python3 -m pytest -q src/bxi_nav/test/test_nav2_planning_contract.py -k goal_rotation_shim</code>：4 passed。</li>
+<li><code>colcon test --packages-select nav</code>：本次相关测试通过；整包仍有 1 个既存失败，<code>mid360.yaml</code> 的 <code>scan_bodyframe_pub_en=True</code> 与合同期望 <code>False</code> 不一致。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>对同一异常基类统一返回零命令容易把永久输入条件（短路径）误当成可恢复条件（TF 暂时缺失），形成无终态的控制循环；应按恢复语义拆分异常边界。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>采用最小控制流修复并沿用仓库现有源码契约测试；未为内部插件类额外拆分接口或引入测试专用抽象。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>有真机导航环境时复测距离小于 0.20 m 的目标点与仅调整终点朝向的目标。</li>
+</ul>
+<hr>
+<h2>延时启动并处理弯道低角速度</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T14:58:33+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_14-59-54_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>新导航目标现在先经过 1 秒非阻塞稳定窗口再执行；MPPI 在弯道输出低于双足有效区间的角速度时，控制器会停止平移并以最低有效角速度原地转向，避免 5 秒后因无可观测进展而中止。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/src/goal_rotation_shim_controller.cpp</code>：新增 <code>new_goal_start_delay</code> 参数和截止时间状态；等待期间持续返回零速度而不阻塞控制线程；低角速度命令转换为带碰撞复检的原地旋转。</li>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：配置 1 秒新目标延时，并将进度容许时间从 5 秒同步增加到 6 秒。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：增加延时状态机、弯道最低旋转速度和进度窗口契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>colcon build --packages-select nav --symlink-install</code>：构建通过。</li>
+<li>Rotation Shim 与进度检查定向测试：6 passed。</li>
+<li>排除既有 scan 配置契约：29 passed，3 skipped。</li>
+<li><code>ament_uncrustify</code>：无 C++ 格式问题。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>控制循环中的启动延时应实现为截止时间状态机，不能使用 <code>sleep</code> 阻塞 controller_server。</li>
+<li>双足机器人无法执行的小曲率指令可转换为停止平移后的明确原地旋转，同时必须基于提升后的角速度重新预测碰撞。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>没有全局放大 MPPI 的弯道角速度；选择先停止平移再旋转，以避免未校验地改变平移轨迹。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>实机观察新目标开始后的 1 秒零速度以及弯道 <code>angular.z=0.25</code> 是否稳定；既有 <code>scan_bodyframe_pub_en=True</code> 契约失败仍未处理。</li>
+</ul>
+<hr>
+<h2>用 MPPI 原生代价修复弯道正负速度抖动</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T15:21:21+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_15-22-10_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>移除了将 MPPI 小角速度事后强制放大为正负 0.25 的逻辑，改为在优化阶段避开双足旋转死区并遵循 State Lattice 的路径朝向，避免弯道处符号噪声被放大后反复换向和卡死。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/src/goal_rotation_shim_controller.cpp</code>：删除全局最低角速度后处理，保留新目标延时、TF 重试和明确的 Rotation Shim 行为。</li>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：启用 <code>VelocityDeadbandCritic</code>，将角速度死区设为 <code>0.20 rad/s</code>；启用 <code>PathAngleCritic</code> 以跟踪 lattice 中间朝向和原地旋转 primitive。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：将契约改为验证原生死区 critic、路径朝向 critic，并禁止重新引入控制器输出后限幅。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>colcon build --packages-select nav --symlink-install</code>：构建通过。</li>
+<li>MPPI 与 Rotation Shim 定向测试：8 passed。</li>
+<li>排除既有 scan 配置契约：29 passed，3 skipped。</li>
+<li><code>ament_uncrustify</code>：无 C++ 格式问题。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>对优化控制器的输出做符号保持的最低幅值放大，会把零附近的优化噪声放大成执行机构大幅反转；速度死区应作为优化代价建模。</li>
+<li>State Lattice 路径包含相同位置、不同朝向的原地旋转 primitive；只使用位置跟随 critic 会丢失这部分规划意图。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>采用 Nav2 Humble 已安装的 <code>VelocityDeadbandCritic</code> 和 <code>PathAngleCritic</code>，拒绝继续维护自定义角速度后处理状态机。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>重启导航栈后实机观察弯道角速度是否稳定越过 <code>0.20 rad/s</code>；必要时只调整两个 critic 的权重，不再放大最终命令。</li>
+</ul>
+<hr>
+<h2>降低 Rotation Shim 角加速度</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T15:31:23+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_15-32-04_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>将 Rotation Shim 最大角加速度从 <code>16.0</code> 降到 <code>2.0 rad/s²</code>，降低双足机器人开始和停止原地旋转时的角速度突变。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：设置 <code>max_angular_accel: 2.0</code>，20 Hz 下每周期角速度最多变化 <code>0.1 rad/s</code>。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：更新角加速度和单周期速度增量契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>colcon build --packages-select nav --symlink-install</code>：构建通过。</li>
+<li>角加速度定向测试：1 passed。</li>
+<li>排除既有 scan 配置契约：29 passed，3 skipped。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>控制频率为 20 Hz 时，<code>2.0 rad/s²</code> 对应每个 50 ms 控制周期最多改变 <code>0.1 rad/s</code>。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>保留 <code>rotate_to_heading_angular_vel: 0.8</code> 作为速度上限，只降低达到上限的斜率。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>重启导航栈后观察双足原地转向的启动平顺性和是否仍能稳定跨过角速度死区。</li>
+</ul>
+<hr>
+<h2>调整旋转死区和角加速度</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T15:43:03+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_15-44-07_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>将 MPPI 角速度死区从 <code>0.20</code> 降到 <code>0.10 rad/s</code>，同时将 Rotation Shim 最大角加速度从 <code>2.0</code> 提高到 <code>4.0 rad/s²</code>。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：设置 <code>VelocityDeadbandCritic.deadband_velocities</code> 为 <code>[0.0, 0.0, 0.10]</code>，设置 <code>max_angular_accel: 4.0</code>。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：同步更新死区、角加速度和 20 Hz 单周期速度增量契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>colcon build --packages-select nav --symlink-install</code>：构建通过。</li>
+<li>两条定向测试通过。</li>
+<li>排除既有 scan 配置契约：29 passed，3 skipped。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li><code>4.0 rad/s²</code> 在 20 Hz 下对应每周期最多改变 <code>0.2 rad/s</code>；死区 critic 的 <code>0.10</code> 是优化软约束，不是最终命令硬限幅。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>保留死区 critic 权重 <code>35.0</code>，本轮只调整用户指定的死区范围与角加速度。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>重启导航栈后实机观察弯道角速度连续性和 Rotation Shim 启停平顺性。</li>
+</ul>
+<hr>
+<h2>禁用 State Lattice 的 Dubins 终点捷径</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T16:26:29+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_16-27-10_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>关闭 SmacPlannerLattice 的 Dubins analytic expansion，避免前进限定的终点捷径为满足目标朝向生成回环，同时保留差速 lattice 中的原地旋转 primitive。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：将 <code>analytic_expansion_max_length</code> 从 <code>3.0</code> 设为 <code>0.0</code>，并明确继续保持 forward-only lattice expansion。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：更新规划参数契约，防止后续误恢复 Dubins 终点捷径。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -m pytest -q src/bxi_nav/test/test_nav2_planning_contract.py -k &#x27;smac_lattice_parameters_match_the_forward_only_goal_profile&#x27;</code>：1 passed。</li>
+<li><code>python3 -m pytest -q src/bxi_nav/test/test_nav2_planning_contract.py -k &#x27;not navigation_scan_uses_the_registered_world_cloud&#x27;</code>：29 passed，3 skipped，1 deselected。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：构建成功。</li>
+<li>运行时参数查询：<code>SmacPlanner.analytic_expansion_max_length</code> 为 <code>0.0</code>。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>State Lattice 即使包含原地旋转 primitive，也可能被 analytic expansion 的 Dubins 连接绕过；对可原地转向且无法倒车的双足机器人，关闭该捷径可让搜索结果更贴合真实运动能力。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>选择仅关闭 analytic expansion，不启用 reverse expansion，因为当前 MPPI 的 <code>vx_min</code> 为 <code>0.0</code>，不能执行倒车路径；代价是终点附近搜索量可能增加。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>用相同起终点和目标 yaw 复测红色全局路径，确认回环消失，并观察原地旋转命令是否超过双足机器人的实际角速度死区。</li>
+</ul>
+<hr>
+<h2>移除 MPPI 速度死区 Critic</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T16:52:59+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_16-54-01_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>从 MPPI 配置中完整移除 <code>VelocityDeadbandCritic</code>，避免优化器继续以软件死区干预角速度选择，同时保留 Rotation Shim、PathAngleCritic 和现有运动约束。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：从 critic 列表删除 <code>VelocityDeadbandCritic</code>，并删除其权重和 deadband 参数块。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：更新 critic 列表、权重和无死区契约，明确该插件必须不存在。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li>定向 MPPI 契约：4 passed。</li>
+<li><code>python3 -m pytest -q src/bxi_nav/test/test_nav2_planning_contract.py -k &#x27;not navigation_scan_uses_the_registered_world_cloud&#x27;</code>：29 passed，3 skipped，1 deselected。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：构建成功。</li>
+<li>运行时只读检查：当前旧 <code>controller_server</code> 仍持有 <code>VelocityDeadbandCritic</code>，需要节点正常重启后加载新配置。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>Nav2 MPPI 的 critic 在控制器配置阶段创建；修改 YAML 和重建工作空间不会从已运行进程中热卸载 critic，运行配置与源码配置必须分别核对。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>未在机器人可能运行时自动重启导航控制节点，避免突发中断速度输出；持久配置已经完成，下一次正常重启后生效。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>导航栈正常重启后查询 <code>MPPIForward.critics</code>，确认列表中不再包含 <code>VelocityDeadbandCritic</code>。</li>
+</ul>
+<hr>
+<h2>恢复 Smac 终点快捷连线</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T17:21:40+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_17-22-23_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>恢复 SmacPlannerLattice 接近终点时的 analytic expansion，使规划器可以再次用最长 3 米的 forward-only Dubins 曲线直接连接目标姿态。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：将 <code>analytic_expansion_max_length</code> 从 <code>0.0</code> 恢复为 <code>3.0</code>。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：同步恢复终点连线参数契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li>定向 Smac 参数契约：1 passed。</li>
+<li><code>python3 -m pytest -q src/bxi_nav/test/test_nav2_planning_contract.py -k &#x27;not navigation_scan_uses_the_registered_world_cloud&#x27;</code>：29 passed，3 skipped，1 deselected。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：构建成功。</li>
+<li>当前运行时参数：<code>SmacPlanner.analytic_expansion_max_length</code> 为 <code>3.0</code>。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li><code>analytic_expansion_max_length</code> 可以动态更新，并直接控制终点附近是否接受解析曲线捷径；设为零等效关闭，恢复正值后无需重启 planner 即可用于后续规划请求。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>只恢复用户指定的终点连线，继续保持 <code>allow_reverse_expansion: false</code>；未迁移参考项目的 Reeds-Shepp 倒退链路，也未恢复已删除的速度死区 critic。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>观察相同目标 yaw 下红色全局路径是否重新出现 forward-only Dubins 回环。</li>
+</ul>
+<hr>
+<h2>迁入参考项目的 bxi_nav 双向导航配置</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T17:39:39+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_17-40-32_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>将 <code>/home/tang/elf3-test-01/bxi_rc_slam/src/bxi_nav</code> 的导航行为迁入当前项目，使 Planner、MPPI 和 Rotation Shim 恢复参考项目中经过使用的双向导航组合，同时按要求保留当前局部障碍层与膨胀层参数。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：恢复 Reeds-Shepp 双向扩展、<code>vx_min: -0.35</code>、参考 MPPI critic 集合和旋转参数；保留 <code>observation_persistence: 1.5</code>、障碍高度/量程以及 <code>inflation_radius: 0.10</code>、<code>cost_scaling_factor: 1.6</code>。</li>
+<li><code>src/bxi_nav/src/goal_rotation_shim_controller.cpp</code>：迁入参考项目的反向起步识别，避免倒退路径被 Rotation Shim 错误转成前进路径。</li>
+<li><code>src/bxi_nav/launch/*.py</code>：恢复参考项目的启动方式和默认 Nav2 RViz 配置。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：保留指定例外参数契约，并修正参考测试中与其实际 YAML 不一致的陈旧 critic/角速度断言。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -m pytest -q src/bxi_nav/test/test_nav2_planning_contract.py</code>：25 passed，3 skipped。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：构建成功。</li>
+<li><code>colcon test --packages-select nav</code> 与 <code>colcon test-result --verbose --test-result-base build/nav</code>：29 tests，0 errors，0 failures，3 skipped。</li>
+<li>差异核对：除用户指定的 YAML 例外、对应测试和生成的 <code>__pycache__</code> 外，其余 <code>bxi_nav</code> 文件与参考项目一致。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>双向全局规划不能只打开 <code>allow_reverse_expansion</code>；必须让 MPPI 接受负线速度，并让 Rotation Shim 识别反向起步，才能避免生成控制器无法执行的路径。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>保留参考项目重新加入的 local costmap <code>static_layer</code>，但不覆盖用户明确指定的 obstacle/inflation 参数。删除了当前项目独有且参考启动不再使用的 <code>nav2_test.rviz</code>；迁移前完整包备份位于 <code>/tmp/bxi_nav_before_reference.eLWDhc/bxi_nav</code>。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>当前正在运行的 Nav2 节点仍是旧二进制和旧 controller 实例；需要在安全条件下正常重启导航栈后，双向 Planner、负 <code>vx</code> 和反向 Shim 才会整体生效。</li>
+</ul>
+<hr>
+<h2>恢复 Nav2 路径可视化</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T17:48:28+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_17-48-54_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>恢复 RViz 中全局路径、转换后路径和 MPPI 轨迹的可视化，并保留参考项目迁入的双向导航与局部代价地图配置。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/nav2_test.rviz</code>：恢复红色 <code>/debug/plan</code>、蓝色 <code>/transformed_global_plan</code> 和绿色 <code>/trajectories</code> 显示。</li>
+<li><code>src/bxi_nav/launch/indoor_navigation_launch.py</code>：恢复 <code>controller_visualize</code> 参数、本地 RViz 配置及向下级 launch 的参数传递。</li>
+<li><code>src/bxi_nav/launch/navigation_direct_cmd_vel_launch.py</code>：恢复 <code>controller_visualize</code> 参数及 <code>MPPIForward.visualize</code> 动态重写。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：恢复路径可视化契约测试。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>pytest</code> 定向可视化契约：1 passed。</li>
+<li>完整 Python 契约测试：26 passed，3 skipped。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：成功。</li>
+<li><code>colcon test --packages-select nav</code>：成功；测试结果为 30 tests、0 errors、0 failures、3 skipped。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>RViz 显示配置、launch 参数传递和控制器运行时 <code>visualize</code> 参数必须同时恢复，才能保证路径与采样轨迹真正可见。</li>
+<li>恢复观测能力时应避免连带回退运动学配置；可视化与双向规划行为可以独立保留。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>保留参考项目的直接生命周期启动方式，未恢复旧版 <code>OpaqueFunction/TimerAction</code> 延时；本次仅恢复路径可视化链路。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>当前运行中的 Nav2 不会自动重新读取 launch 和 RViz 配置，需要下次正常启动后生效。</li>
+</ul>
+<hr>
+<h2>恢复 Nav2 一赫兹周期重规划</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T18:32:54+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_18-33-19_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>单点和多点导航在 MPPI 跟踪路径期间每秒重新计算一次 Smac 全局路径，使新进入全局代价地图的障碍能够触发绕行路径更新。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/behavior_trees/navigate_to_pose_smac_mppi.xml</code>：使用 <code>PipelineSequence</code> 并由 <code>RateController hz=&quot;1.0&quot;</code> 周期执行 <code>ComputePathToPose</code>。</li>
+<li><code>src/bxi_nav/config/behavior_trees/navigate_through_poses_smac_mppi.xml</code>：使用相同结构周期执行 <code>ComputePathThroughPoses</code>。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：将一次性规划契约改为一赫兹周期重规划契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li>定向 pytest：1 passed，28 deselected。</li>
+<li><code>xmllint --noout</code>：两棵行为树 XML 均合法。</li>
+<li>源码与安装空间 <code>cmp</code>：两棵行为树一致。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：成功。</li>
+<li><code>colcon test --packages-select nav</code>：本次重规划测试通过，但完整包测试有 2 个既有参数契约失败。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>Nav2 的 <code>PipelineSequence</code> 会在控制器运行期间继续 tick 前面的规划分支，配合 <code>RateController</code> 可以用最小结构实现周期重规划。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>仅恢复用户指定的一赫兹重规划；未修改 Collision Monitor、MPPI 速度和局部代价地图参数。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>当前配置 <code>vx_min: 0.0</code> 与测试期望 <code>-0.35</code>、局部 <code>inflation_radius: 0.20</code> 与测试期望 <code>0.10</code> 不一致，需要作为独立参数决策处理。</li>
+</ul>
+<hr>
+<h2>关闭导航倒退逻辑</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T19:08:49+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_19-09-22_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>将导航链路统一为原地旋转后向前移动，避免全局规划器生成反向路径而 Rotation Shim 又跳过朝向校正。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/src/goal_rotation_shim_controller.cpp</code>：删除反向路径识别与绕过分支，新目标统一触发 Rotation Shim。</li>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：关闭 Smac State Lattice 反向扩展，移除无效的反向惩罚，并保持 MPPI <code>vx_min: 0.0</code>。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：将 Shim、Smac 和 MPPI 契约统一为前向模式。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li>前向模式定向 pytest：3 passed，26 deselected。</li>
+<li>完整 Python 契约：25 passed，3 skipped，1 个与本次无关的局部膨胀参数契约失败。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：成功。</li>
+<li>安装空间参数检查：包含 <code>vx_min: 0.0</code> 和 <code>allow_reverse_expansion: false</code>。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>全局规划器、Rotation Shim 与局部控制器的运动方向能力必须一致，否则会出现规划为倒退、Shim 不旋转、控制器又禁止负速度的死锁。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>保留 State Lattice 的原地旋转 primitive，只关闭反向扩展；未修改局部代价地图和 Collision Monitor。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>当前局部 <code>inflation_radius: 0.20</code>，测试仍期望 <code>0.10</code>，需要作为独立参数决策处理。</li>
+</ul>
+<hr>
+<h2>移除一赫兹周期重规划</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T19:32:57+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_19-33-28_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>恢复单点和多点导航的一次规划模式，避免同一目标每秒更新路径时提前清除 Rotation Shim 的旋转状态并切换到 MPPI。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/behavior_trees/navigate_to_pose_smac_mppi.xml</code>：删除 <code>PipelineSequence</code> 和 <code>RateController</code>，恢复 <code>PlanThenNavigate</code>。</li>
+<li><code>src/bxi_nav/config/behavior_trees/navigate_through_poses_smac_mppi.xml</code>：恢复多点导航的一次规划结构。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：恢复一次规划契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li>一次规划定向 pytest：1 passed，28 deselected。</li>
+<li><code>xmllint --noout</code>：两棵行为树 XML 均合法。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：成功。</li>
+<li>安装空间检查：行为树中没有 <code>RateController</code> 或 <code>PipelineSequence</code>。</li>
+<li>完整 Python 契约：25 passed，3 skipped，1 个与本次无关的局部膨胀参数契约失败。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>周期规划和 Rotation Shim 共享 <code>setPlan()</code> 状态时，同一目标的新路径也可能中断尚未完成的初始旋转；一次规划可以隔离这类状态覆盖。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>优先保证新目标完成原地旋转后再交给 MPPI；暂时放弃动态障碍出现后的周期全局绕行。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>当前局部 <code>inflation_radius: 0.20</code>，测试仍期望 <code>0.10</code>，需要作为独立参数决策处理。</li>
+</ul>
+<hr>
+<h2>恢复 Rotation Shim 每路径触发</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T19:43:02+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_19-43-30_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>删除自定义 Rotation Shim 对相同目标的过滤，使每次收到 <code>FollowPath</code> 路径时都使用 Nav2 原生 <code>setPlan()</code> 重新触发初始朝向校正。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/src/goal_rotation_shim_controller.cpp</code>：删除自定义 <code>setPlan()</code>，直接继承 Nav2 原生 Rotation Shim 行为。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：增加契约，禁止再次覆盖 <code>setPlan()</code> 或引入目标过滤状态。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li>Rotation Shim 定向 pytest：1 passed，28 deselected。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：成功。</li>
+<li>插件安装检查：安装空间链接到新构建库，源码/安装库哈希一致。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>Nav2 原生 Rotation Shim 会在每次 <code>setPlan()</code> 时将 <code>path_updated_</code> 置真；按终点过滤重复路径会让相同目标的后续导航跳过初始旋转。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>保留现有自定义插件名称和打包接口，仅删除行为覆盖，避免扩大配置与部署变更范围。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>本次执行期间 <code>nav2_smac_mppi_params.yaml</code> 存在外部并发修改；已保留其 <code>rotate_to_heading_angular_vel: 1.2</code>、<code>vy_max/vy_std: 0.0</code> 等当前内容，未纳入本次验证结论。</li>
+</ul>
+<hr>
+<h2>全局规划切换为 SmacPlanner2D</h2>
+<ul>
+<li>创建时间：<code>2026-08-24T19:54:20+08:00</code></li>
+<li>原始笔记：<code>2026-08-24_19-54-55_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>将全局规划器从 Smac State Lattice 切换为 Humble 的 <code>SmacPlanner2D</code>，移除运动 primitive 和 Lattice 专属参数，使全局路径改用二维栅格 A* 搜索。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：配置 <code>nav2_smac_planner/SmacPlanner2D</code>、栅格代价权重和终点朝向行为。</li>
+<li><code>src/bxi_nav/launch/navigation_direct_cmd_vel_launch.py</code>：删除 lattice 文件路径动态重写。</li>
+<li><code>src/bxi_nav/CMakeLists.txt</code>：删除 Nav2 diff-drive primitive 的定位、校验和安装逻辑。</li>
+<li><code>src/bxi_nav/test/test_nav2_planning_contract.py</code>：以 SmacPlanner2D 参数和无 lattice 依赖为新契约。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li>SmacPlanner2D/行为树/Rotation Shim 定向 pytest：4 passed，25 deselected。</li>
+<li>launch Python 语法检查：通过。</li>
+<li><code>colcon build --packages-select nav --symlink-install</code>：成功。</li>
+<li>安装空间检查：使用 <code>SmacPlanner2D</code>，不再引用 lattice；遗留 primitive 已删除。</li>
+<li>完整 Python 契约：23 passed，3 skipped，3 个当前控制器/局部膨胀参数与旧测试期望不一致的失败。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>SmacPlanner2D 使用二维栅格搜索，不需要运动 primitive；Lattice 专属搜索参数必须一并删除，否则会留下无效配置和部署依赖。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>保留行为树中的 <code>planner_id: SmacPlanner</code>，只替换其插件实现，避免修改 BT 接口；Rotation Shim 和 MPPI 继续负责机器人朝向与局部运动控制。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>SmacPlanner2D 不约束差速运动学，可能生成更尖锐的栅格拐角，需要在实机观察 MPPI 跟踪表现。</li>
+<li>当前 <code>vy_max/vy_std: 0.0</code>、旋转速度 <code>1.2</code>、局部膨胀 <code>0.20</code> 与旧契约不一致，未在本次规划器切换中改动。</li>
+</ul>
+<hr>
+<h2 id="date-2026-08-25">完善 Nav2 Smac MPPI 配置注释</h2>
+<ul>
+<li>创建时间：<code>2026-08-25T13:23:03+08:00</code></li>
+<li>原始笔记：<code>2026-08-25_13-23-39_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>为生产使用的 Nav2 SmacPlanner2D、旋转适配器、MPPI、行为服务器及代价地图配置补齐中文注释，明确参数作用、单位、阈值方向和 Humble 版本差异，便于后续现场调参。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：统一中文注释并修正 BT 超时单位、MPPI critic、未知栅格、膨胀衰减和 Smac 规划器等易误解说明；未主动调整参数值。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -c &#x27;... yaml.safe_load(...) ...&#x27;</code>：YAML 解析通过，共 8 个顶层节点。</li>
+<li><code>python3 -m pytest -q src/bxi_nav/test/test_nav2_planning_contract.py</code>：23 passed、3 skipped、3 failed；失败均为现有配置调参值与契约测试旧期望不一致。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>Nav2 Humble 的 <code>bt_loop_duration</code>、<code>default_server_timeout</code> 和 <code>wait_for_service_timeout</code> 单位均为毫秒；<code>CostCritic.critical_cost</code> 是惩罚值而不是 costmap 原始阈值；膨胀层 <code>cost_scaling_factor</code> 越大，代价衰减越快。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>只完善注释并保留当前调参值；没有为让旧测试通过而回退运行参数，因为参数校准不属于本次注释任务。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>核对并更新 <code>src/bxi_nav/test/test_nav2_planning_contract.py</code> 中与当前运行配置不一致的参数期望。</li>
 </ul>
 </main>
 <footer>由 bxi_rc_slam/项目汇总.md 自动生成</footer>
