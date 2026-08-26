@@ -458,6 +458,40 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <ul>
 <li>无。</li>
 </ul>
+<hr>
+<h2>美化 HTML 笔记站点</h2>
+<ul>
+<li>创建时间：<code>2026-08-25T15:25:50+08:00</code></li>
+<li>原始笔记：<code>2026-08-25_15-26-10_note.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>统一美化项目索引与长文汇总页，使项目入口、日期导航和笔记层级更清晰，并兼顾手机、深色模式、键盘操作和打印阅读。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>DESIGN.md</code>：建立知识库站点的品牌、信息架构、视觉语言、无障碍与响应式设计约束。</li>
+<li><code>scripts/export_summaries.py</code>：集中升级颜色变量、纸张式内容容器、项目卡片、日期胶囊、排版、代码块、深色模式、移动端、减少动态和打印样式。</li>
+<li><code>tests/test_export_summaries.py</code>：增加页面语义类、首页组件和主题/减少动态规则的回归断言。</li>
+<li><code>HTML汇总/</code>：重新生成首页与 6 个项目页面。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li><code>python3 -m unittest discover -s tests -v</code>：7 项测试全部通过。</li>
+<li><code>python3 scripts/export_summaries.py</code>：首页与 6 个项目页面生成成功。</li>
+<li><code>git diff --check</code>：通过。</li>
+<li>Chrome 无头渲染：桌面首页与 390×844 移动端项目页布局、卡片和日期横向导航显示正常。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>静态知识库用共享 CSS 变量、语义 HTML 和系统主题偏好即可获得完整视觉体验，无需 JavaScript、远程字体或前端框架。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>选择低装饰的纸张感与蓝紫强调色，优先长文可读性；未加入图片、复杂动画、主题切换按钮和搜索，待内容规模增长后再评估。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>无。</li>
+</ul>
 </main>
 <footer>由 note/项目汇总.md 自动生成</footer>
 </body>

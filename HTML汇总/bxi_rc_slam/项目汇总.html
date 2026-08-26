@@ -1103,6 +1103,34 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <ul>
 <li>核对并更新 <code>src/bxi_nav/test/test_nav2_planning_contract.py</code> 中与当前运行配置不一致的参数期望。</li>
 </ul>
+<hr>
+<h2>调整局部代价地图为 6×6 米</h2>
+<ul>
+<li>创建时间：<code>2026-08-25T15:05:17+08:00</code></li>
+<li>原始笔记：<code>2026-08-25_15-05-44_bxi_rc_slam.md</code></li>
+</ul>
+<h3>本次完成</h3>
+<p>将局部滚动代价地图由 5×5 米扩大到 6×6 米，为 3.6 秒 MPPI 预测时域增加地图边界余量。</p>
+<h3>关键改动</h3>
+<ul>
+<li><code>src/bxi_nav/config/nav2_smac_mppi_params.yaml</code>：将 <code>local_costmap</code> 的 <code>width</code> 和 <code>height</code> 均改为 6 米。</li>
+</ul>
+<h3>验证结果</h3>
+<ul>
+<li>YAML 解析及参数断言：通过，局部地图为 6×6 米，在 0.05 米分辨率下共 14,400 个栅格。</li>
+</ul>
+<h3>值得学习</h3>
+<ul>
+<li>局部滚动地图以机器人为中心，边长 6 米意味着任意轴向约有 3 米预测空间；配置 MPPI 前向时域时应给 footprint 和膨胀层预留边界余量。</li>
+</ul>
+<h3>决策与取舍</h3>
+<ul>
+<li>只修改地图尺寸，保留分辨率、更新频率和 MPPI 参数，避免同时改动多个变量影响现场判断。</li>
+</ul>
+<h3>后续事项</h3>
+<ul>
+<li>实机观察高速转弯或贴近地图边界时是否出现候选轨迹越界。</li>
+</ul>
 </main>
 <footer>由 bxi_rc_slam/项目汇总.md 自动生成</footer>
 </body>

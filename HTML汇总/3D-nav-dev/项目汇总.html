@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>bxi_show 项目汇总</title>
+  <title>3D-nav-dev 项目汇总</title>
   <style>:root {
   color-scheme: light;
   --page: #f3f1ec;
@@ -123,111 +123,108 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <body>
 <main class="document-page">
 <nav class="date-nav" aria-label="按日期查找笔记"><strong>按日期：</strong>
-<a href="#date-2026-08-23"><time datetime="2026-08-23">2026-08-23</time></a>
 <a href="#date-2026-08-25"><time datetime="2026-08-25">2026-08-25</time></a>
 </nav>
-<h1>bxi_show 项目汇总</h1>
+<h1>3D-nav-dev 项目汇总</h1>
 <hr>
-<h2 id="date-2026-08-23">完善圆屏项目的部署与使用说明</h2>
+<h2 id="date-2026-08-25">增加一键仿真测试启停脚本</h2>
 <ul>
-<li>创建时间：<code>2026-08-23T20:03:23+08:00</code></li>
-<li>原始笔记：<code>2026-08-23_20-04-00_bxi_show.md</code></li>
+<li>创建时间：<code>2026-08-25T11:47:59+08:00</code></li>
+<li>原始笔记：<code>2026-08-25_15-06-45_3D-nav-dev.md</code></li>
 </ul>
 <h3>本次完成</h3>
-<p>完善根目录 README，使 Wi-Fi 配置、ROS 2 UDP 显示、TF 卡相册、图片上传、Web OTA、双眼眨眼和完整固件烧录都有统一入口，便于新设备部署与后续维护。</p>
+<p>增加一键启动和停止入口，自动复用现有 ELF3 仿真策略与 3D 建图脚本，并用独立进程组、PID 文件和日志文件管理后台测试进程。</p>
 <h3>关键改动</h3>
 <ul>
-<li><code>README.md</code>：补充功能概览、目录说明、Arduino 编译参数、网络使用步骤、完整 BIN 烧录、串口权限和故障排查。</li>
-<li><code>.gitignore</code>：忽略 Codex/OMX 状态及 Python 缓存，避免开发辅助文件进入版本库。</li>
+<li><code>start.sh</code>：缺少完整安装产物时自动构建，依次启动仿真策略和建图，阻止重复启动并在失败时清理已启动进程。</li>
+<li><code>stop.sh</code>：按 PID 文件向整个进程组发送 TERM，超时后发送 KILL，支持重复执行。</li>
 </ul>
 <h3>验证结果</h3>
 <ul>
-<li><code>arduino-cli compile</code>：ESP32-S3 以 16 MB Flash、OPI PSRAM 和 Custom 分区编译通过，程序占用 1277129 字节，全局变量占用 51040 字节。</li>
-<li><code>flash_firmware.py --check-only</code>：环境检测通过。</li>
-<li><code>esptool image_info</code> 与分区解析：固件镜像有效，<code>ota_0</code>、<code>ota_1</code> 均为 6400K。</li>
-<li><code>git diff --cached --check</code>：提交前差异检查通过。</li>
-<li>本地与远端提交核对：<code>ai_dev</code> 均指向 <code>122600ab53e6495518a1922c848680cef68c8cac</code>。</li>
+<li><code>bash -n start.sh stop.sh</code>：通过，两个脚本语法正确且具有执行权限。</li>
+<li>隔离 <code>sleep</code> 进程组冒烟：真实会话 PID 写入、重复启动拦截、失败清理和停止后 PID 文件删除均通过。</li>
+<li><code>./start.sh</code>：首次构建被现有环境依赖阻断；缺少 Pangolin，且 PCL/VTK 引用的 <code>MPI::MPI_C</code> 目标不存在，未进入 ROS 全链路启动。</li>
+<li>残留检查：无 <code>colcon build</code>、目标 ROS launch 或运行 PID 文件残留。</li>
 </ul>
 <h3>值得学习</h3>
 <ul>
-<li>支持 Web OTA 时必须保留两个 OTA 应用槽；单个 Huge APP 分区虽然容量大，但不能提供安全的远程升级回退路径。</li>
-<li>发布完整 16 MB 镜像时，应明确区分可串口整片烧录的完整 BIN 与仅供 OTA 更新的应用 BIN。</li>
+<li><code>setsid</code> 在调用进程恰好是进程组组长时可能自行 fork，因此不能无条件把 shell 的 <code>$!</code> 当作新会话 PID；由新会话内进程回写 <code>$$</code> 更可靠。</li>
 </ul>
 <h3>决策与取舍</h3>
 <ul>
-<li>保持 16 MB Flash 与 Custom 双 OTA 分区；不采用 Huge APP，避免失去备用 OTA 槽。</li>
-<li>README 直接围绕实际操作命令组织，不再增加额外文档框架。</li>
+<li>复用仓库已有启动脚本并以进程组停止，未采用宽泛 <code>pkill</code>，避免误伤同机其他 ROS 进程。</li>
 </ul>
 <h3>后续事项</h3>
 <ul>
-<li>仍需在实机验证触摸、TF 卡 JPG/GIF 切换、网页上传、Web OTA 和串口完整烧录。</li>
+<li>安装 Pangolin，并修复当前 PCL/VTK 的 MPI C 目标配置后，再执行 <code>./start.sh</code> 完成 ROS 全链路冒烟。</li>
 </ul>
 <hr>
-<h2 id="date-2026-08-25">优化 ESP32-S3 快速烧录入口</h2>
+<h2>编译 3D-nav-dev 并补齐依赖</h2>
 <ul>
-<li>创建时间：<code>2026-08-25T19:39:59+08:00</code></li>
-<li>原始笔记：<code>2026-08-25_19-40-20_bxi_show.md</code></li>
+<li>创建时间：<code>2026-08-25T15:26:07+08:00</code></li>
+<li>原始笔记：<code>2026-08-25_15-26-38_3D-nav-dev.md</code></li>
 </ul>
 <h3>本次完成</h3>
-<p>将完整固件与烧录脚本移到项目根目录，并把 Linux 串口选择改为数字编号交互；选择后自动提示管理员密码并执行指定的串口授权命令，降低现场烧录的操作门槛。</p>
+<p>补齐 ROS 2 Humble 运行/编译依赖并完成工作区构建，15 个项目包全部通过。解决了 Pangolin/RTAB-Map 依赖缺失，以及 PCL/VTK 查找 OpenMPI C 目标失败两个阻塞点。</p>
 <h3>关键改动</h3>
 <ul>
-<li><code>flash_firmware.py</code>：串口按编号选择，Linux 自动执行 <code>sudo chmod 777 &lt;串口&gt;</code> 并提示密码输入不可见。</li>
-<li><code>LVGL_Arduino_full.bin</code>：无内容变化地搬到项目根目录。</li>
-<li><code>tests/test_flash_firmware.py</code>：覆盖编号选择、授权命令和主流程自动授权。</li>
-<li><code>README.md</code>、<code>ESP32-S3-Touch-LCD-2.1-Demo/Arduino/examples/LVGL_Arduino/DISPLAY_SETUP.md</code>：同步根目录用法和权限说明。</li>
+<li><code>src/bxi_example_nav3d/bxi_octo_global_planner/CMakeLists.txt</code>：为项目同时启用 C 与 CXX，使 PCL/VTK 能创建并链接 <code>MPI::MPI_C</code>。</li>
+<li>系统依赖：安装 Pangolin、depth-image-proc、RTAB-Map launch/odom/slam/sync/msgs/rviz 插件和 imu-filter-madgwick 等 ROS 包及传递依赖。</li>
 </ul>
 <h3>验证结果</h3>
 <ul>
-<li><code>python3 -m unittest tests/test_flash_firmware.py</code>：3 条测试通过。</li>
-<li><code>python3 flash_firmware.py --check-only</code>：Python、esptool 和 16 MB 固件结构检查通过。</li>
-<li><code>git hash-object</code> 对比：搬迁前后固件 Git 对象哈希一致。</li>
+<li><code>./build.sh</code>：全量构建 15/15 成功；再次增量构建 15/15 成功。</li>
+<li><code>ros2 pkg prefix bxi_example_py_elf3 bxi_scan_nav bxi_orbslam3_ros2</code>：三个关键包均解析到本工作区 <code>install</code>。</li>
+<li><code>colcon test --merge-install --packages-select scan_planner</code>（<code>ROS_LOG_DIR=/tmp/3d-nav-ros-logs</code>）：2/2 通过。</li>
+<li><code>ctest --test-dir build/remote_controller -R &#x27;remote_controller_(crsf_frame_parser|control_rules)_test&#x27;</code>：2/2 核心单元测试通过。</li>
+<li><code>rosdep check --from-paths src --ignore-src -r</code>：系统依赖均满足；仅 <code>ament_python</code> 在当前 rosdep 数据中无映射。</li>
 </ul>
 <h3>值得学习</h3>
 <ul>
-<li>设备列表适合动态编号映射，用户只需输入短数字，同时仍可保留 <code>--port</code> 供自动化调用。</li>
-<li>二进制文件搬迁后应比较内容哈希，避免仅凭文件大小判断完整性。</li>
+<li>当 PCL/VTK 报 <code>MPI::MPI_C</code> 不存在而 OpenMPI 已安装时，应检查顶层 CMake 是否只启用了 CXX；<code>project(... LANGUAGES C CXX)</code> 才会让 CMake 的 MPI 查找创建 C 目标。</li>
 </ul>
 <h3>决策与取舍</h3>
 <ul>
-<li>保留旧的 <code>--fix-port-permission</code> 参数作为兼容入口，但 Linux 主流程不再要求用户手动添加该参数。</li>
+<li>优先使用 apt/ROS 官方二进制包补齐已有 manifest 依赖；没有引入源码编译的第三方副本。仅对真实的 CMake 语言声明根因做一行修复。</li>
 </ul>
 <h3>后续事项</h3>
 <ul>
-<li>未连接真实 ESP32-S3 执行烧录；硬件连接与写入流程仍需现场验证。</li>
+<li>全量 <code>colcon test</code> 仍会因 <code>remote_controller</code> 现有版权/格式 lint，以及 <code>bxi_example_py_elf3</code> 配置了不存在的 <code>test/</code> 目录而失败；功能测试已单独通过。未启动仿真/rviz。</li>
 </ul>
 <hr>
-<h2>完善 README 快速使用说明</h2>
+<h2>恢复启动实时日志与 RViz 点云</h2>
 <ul>
-<li>创建时间：<code>2026-08-25T20:01:34+08:00</code></li>
-<li>原始笔记：<code>2026-08-25_20-01-51_bxi_show.md</code></li>
+<li>创建时间：<code>2026-08-25T16:35:49+08:00</code></li>
+<li>原始笔记：<code>2026-08-25_16-36-15_3D-nav-dev.md</code></li>
 </ul>
 <h3>本次完成</h3>
-<p>将无需编译的预编译固件烧录流程提前到项目简介之后，并补齐烧录、首次联网和网页上传的完整使用闭环，降低首次使用门槛。</p>
+<p>让 <code>start.sh</code> 启动后持续输出策略与建图日志，并修复 RTAB-Map 组件无法加载、RViz 点云 QoS 不兼容导致的空白显示。</p>
 <h3>关键改动</h3>
 <ul>
-<li><code>README.md</code>：新增推荐快速开始步骤、Windows 命令提示、数据覆盖提醒、环境检查和 Linux 串口权限说明。</li>
+<li><code>start.sh</code>：启动后使用 <code>tail -F</code> 实时跟随两份日志；系统缺失新版本动态库时加载项目内本地 ROS overlay。</li>
+<li><code>src/bxi_example_nav3d/bxi_scan_nav/config/elf3_rtab_mapping.rviz</code>：将 <code>/rtabmap/cloud_map</code> 的 Durability 改为 <code>Volatile</code>，与发布端一致。</li>
 </ul>
 <h3>验证结果</h3>
 <ul>
-<li><code>python3 flash_firmware.py --help</code>：脚本入口与 README 中记录的参数一致。</li>
-<li><code>PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v</code>：3 项测试全部通过。</li>
-<li><code>git diff --check</code>：通过，无空白错误。</li>
-<li>固件文件检查：<code>LVGL_Arduino_full.bin</code> 为 16777216 字节，符合 16 MB 完整镜像要求。</li>
+<li><code>bash -n start.sh</code>：通过。</li>
+<li><code>colcon build --merge-install --packages-select bxi_scan_nav</code>：构建通过。</li>
+<li><code>ros2 topic info /rtabmap/cloud_map --verbose</code>：发布端与 RViz 订阅端均为 Reliable + Volatile，订阅者为 1。</li>
+<li><code>ros2 topic echo --once /rtabmap/cloud_map --field header</code>：收到 <code>frame_id: world</code> 的实时消息。</li>
 </ul>
 <h3>值得学习</h3>
 <ul>
-<li>快速开始应把最短可用路径放在 README 前部，并覆盖“安装/运行—设备操作—首次可见结果”的完整闭环。</li>
+<li>RViz 空白要同时检查发布端是否存在、组件动态库是否成功加载，以及 DDS QoS 是否兼容；topic 存在不代表订阅能收到数据。</li>
+<li>ROS deb 包更新不同步会出现已安装依赖却缺失新 ABI 动态库的情况，应结合 <code>dlopen</code> 错误和包版本定位。</li>
 </ul>
 <h3>决策与取舍</h3>
 <ul>
-<li>优先说明预编译固件烧录，不把 Arduino 编译环境放进快速路径；源码编译继续保留在后续章节供开发者使用。</li>
+<li>因系统升级需要 sudo 密码，使用官方 deb 解出的本地 overlay 临时恢复；系统包未来升级后 <code>start.sh</code> 会优先使用系统动态库。</li>
 </ul>
 <h3>后续事项</h3>
 <ul>
-<li>无</li>
+<li>有 sudo 权限时可执行 <code>sudo apt install --only-upgrade ros-humble-diagnostic-updater</code>，之后本地 overlay 将不再被使用。</li>
 </ul>
 </main>
-<footer>由 bxi_show/项目汇总.md 自动生成</footer>
+<footer>由 3D-nav-dev/项目汇总.md 自动生成</footer>
 </body>
 </html>
