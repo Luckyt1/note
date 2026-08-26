@@ -147,21 +147,6 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <li>隔离仓库写入测试：目录创建、文件名清理、内容一致性和必需标题检查全部通过。</li>
 <li>安装后文件比对：全局安装内容与已验证版本一致。</li>
 </ul>
-<h3>值得学习</h3>
-<ul>
-<li>Obsidian 仓库本质上是 Markdown 文件目录，直接写入 <code>.md</code> 文件即可被 Obsidian 识别，不要求 GUI 常驻。</li>
-<li>Skill 的 <code>description</code> 决定自动发现和隐式触发的准确度，应同时写清适用任务与不适用边界。</li>
-<li>重复且容易出错的保存逻辑适合放进无第三方依赖的小脚本，正文内容仍由 AI 根据真实任务生成。</li>
-</ul>
-<h3>决策与取舍</h3>
-<ul>
-<li>系统未注册 <code>obsidian</code> CLI，因此选择直接写入 Obsidian 1.12.7 已配置的仓库，而不是依赖 AppImage GUI 或 URI 协议。</li>
-<li>仅创建 Skill、界面元数据和一个保存脚本，没有增加额外依赖或修改项目仓库。</li>
-</ul>
-<h3>后续事项</h3>
-<ul>
-<li>新的 Codex 会话会自动发现该全局 Skill；若当前会话没有刷新 Skill 列表，重新开启会话即可。</li>
-</ul>
 <hr>
 <h2>为 Obsidian 项目笔记增加每小时自动汇总</h2>
 <ul>
@@ -186,23 +171,6 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <li>首次真实合并：8 篇原始笔记成功合并为 3 个项目汇总，8 个来源标记全部存在，原始笔记目录清空。</li>
 <li><code>systemctl --user list-timers</code>：timer 为 active/enabled，下一次运行时间是 2026-08-23 16:53:57 CST。</li>
 <li><code>loginctl show-user tang -p Linger</code>：<code>Linger=yes</code>。</li>
-</ul>
-<h3>值得学习</h3>
-<ul>
-<li>自动删除源文件的流程必须先原子写入目标、执行 <code>fsync</code>，再删除源文件；否则异常或断电可能造成不可恢复的数据丢失。</li>
-<li>使用唯一来源标记能让中断后的重试保持幂等：已合并内容不会重复，残留源文件仍可安全删除。</li>
-<li><code>os.link()</code> 可以在同一文件系统内原子且排他地发布已经写好的文件，避免多个 AI 同一秒保存时互相覆盖。</li>
-<li>用户级 systemd timer 比依赖桌面应用运行的 Codex Scheduled Tasks 更适合固定周期整理工作区外的本机 Obsidian 仓库。</li>
-</ul>
-<h3>决策与取舍</h3>
-<ul>
-<li>采用 Python 标准库加 systemd，没有增加第三方依赖。</li>
-<li>汇总文件保留每篇笔记的完整结构化内容，而不是再次调用 AI 改写，避免定时任务产生含义漂移或遗漏。</li>
-<li>无法解析 <code>project</code> 的异常笔记不会删除，会留在收集箱供人工修复。</li>
-</ul>
-<h3>后续事项</h3>
-<ul>
-<li>无</li>
 </ul>
 <hr>
 <h2>制作 Obsidian AI 项目笔记系统迁移包</h2>
@@ -229,23 +197,6 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <li>最终归档重新解压：文件列表、两层 SHA256、安装脚本语法和 Skill 校验全部通过。</li>
 <li>独立只读复审：最终无 HIGH/MEDIUM 问题。</li>
 </ul>
-<h3>值得学习</h3>
-<ul>
-<li>可移植配置不能只复制文件，还必须显式替换 Skill 安装路径、Obsidian 数据路径和 systemd <code>ExecStart</code> 路径。</li>
-<li>外层压缩包校验与内层逐文件清单可以分别发现传输损坏和包内文件篡改。</li>
-<li>云同步的文件锁通常不能跨设备可靠工作，同一个仓库应只让一台设备运行自动整理 timer。</li>
-<li>迁移包与数据放在同一 Obsidian 仓库中，可以避免工具和笔记备份生命周期分离。</li>
-</ul>
-<h3>决策与取舍</h3>
-<ul>
-<li>压缩包不重复包含 <code>AI项目笔记/</code> 和 <code>AI项目汇总/</code> 数据，避免云端产生两份笔记；数据通过整库同步迁移。</li>
-<li>默认采用 OpenAI 官方用户级 <code>$HOME/.agents/skills</code>，同时允许通过 <code>--skill-root</code> 兼容 <code>$HOME/.codex/skills</code>。</li>
-<li>安装器拒绝自动覆盖已有配置，迁移或升级时需要先显式重命名备份。</li>
-</ul>
-<h3>后续事项</h3>
-<ul>
-<li>真正切换设备前，先在旧设备执行 <code>systemctl --user disable --now obsidian-project-note-merge.timer</code>，等待云同步完成后再在新设备启用。</li>
-</ul>
 <hr>
 <h2>排除纯代码移植笔记</h2>
 <ul>
@@ -266,18 +217,6 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <li><code>sha256sum -c SHA256SUMS</code>：便携压缩包校验通过。</li>
 <li>压缩包内容比对：便携版 <code>SKILL.md</code> 与已安装全局版本一致。</li>
 <li><code>git diff --check</code>：通过。</li>
-</ul>
-<h3>值得学习</h3>
-<ul>
-<li>自动记录规则应区分“改变软件行为”和“搬运已有内容”，否则部署与同步会产生低价值重复笔记。</li>
-</ul>
-<h3>决策与取舍</h3>
-<ul>
-<li>排除纯迁移操作，但保留迁移过程中真实实现、修复或重构的记录，避免遗漏有学习价值的工程变化。</li>
-</ul>
-<h3>后续事项</h3>
-<ul>
-<li>无。</li>
 </ul>
 </main>
 <footer>由 Codex Skills/项目汇总.md 自动生成</footer>

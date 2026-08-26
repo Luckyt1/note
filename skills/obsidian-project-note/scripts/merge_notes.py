@@ -18,6 +18,7 @@ DEFAULT_VAULT = Path("/home/tang/note/note")
 INBOX_FOLDER = "AI项目笔记"
 SUMMARY_FOLDER = "AI项目汇总"
 SOURCE_MARKER = "obsidian-project-note-source"
+DEPRECATED_SECTIONS = ("值得学习", "决策与取舍", "后续事项")
 
 
 def yaml_value(value: str) -> str:
@@ -67,6 +68,16 @@ def extract_title(body: str, fallback: str) -> tuple[str, str]:
     return title.group(1).strip(), remaining
 
 
+def without_deprecated_sections(body: str) -> str:
+    names = "|".join(map(re.escape, DEPRECATED_SECTIONS))
+    cleaned = re.sub(
+        rf"(?ms)^##[ \t]+(?:{names})[ \t]*\n.*?(?=^#{{1,2}}[ \t]+|\Z)",
+        "",
+        body,
+    )
+    return re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+
+
 def source_marker(source: Path) -> str:
     return f"<!-- {SOURCE_MARKER}: {source.name} -->"
 
@@ -86,7 +97,7 @@ def new_summary(project: str, project_path: str, updated: str) -> str:
 
 
 def entry(source: Path, metadata: dict[str, str], body: str) -> str:
-    title, content = extract_title(body, source.stem)
+    title, content = extract_title(without_deprecated_sections(body), source.stem)
     created = metadata.get("created", "时间未知")
     parts = [
         f"## {title}",

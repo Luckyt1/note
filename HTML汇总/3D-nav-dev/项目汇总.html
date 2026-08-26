@@ -146,18 +146,6 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <li><code>./start.sh</code>：首次构建被现有环境依赖阻断；缺少 Pangolin，且 PCL/VTK 引用的 <code>MPI::MPI_C</code> 目标不存在，未进入 ROS 全链路启动。</li>
 <li>残留检查：无 <code>colcon build</code>、目标 ROS launch 或运行 PID 文件残留。</li>
 </ul>
-<h3>值得学习</h3>
-<ul>
-<li><code>setsid</code> 在调用进程恰好是进程组组长时可能自行 fork，因此不能无条件把 shell 的 <code>$!</code> 当作新会话 PID；由新会话内进程回写 <code>$$</code> 更可靠。</li>
-</ul>
-<h3>决策与取舍</h3>
-<ul>
-<li>复用仓库已有启动脚本并以进程组停止，未采用宽泛 <code>pkill</code>，避免误伤同机其他 ROS 进程。</li>
-</ul>
-<h3>后续事项</h3>
-<ul>
-<li>安装 Pangolin，并修复当前 PCL/VTK 的 MPI C 目标配置后，再执行 <code>./start.sh</code> 完成 ROS 全链路冒烟。</li>
-</ul>
 <hr>
 <h2>编译 3D-nav-dev 并补齐依赖</h2>
 <ul>
@@ -179,18 +167,6 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <li><code>ctest --test-dir build/remote_controller -R &#x27;remote_controller_(crsf_frame_parser|control_rules)_test&#x27;</code>：2/2 核心单元测试通过。</li>
 <li><code>rosdep check --from-paths src --ignore-src -r</code>：系统依赖均满足；仅 <code>ament_python</code> 在当前 rosdep 数据中无映射。</li>
 </ul>
-<h3>值得学习</h3>
-<ul>
-<li>当 PCL/VTK 报 <code>MPI::MPI_C</code> 不存在而 OpenMPI 已安装时，应检查顶层 CMake 是否只启用了 CXX；<code>project(... LANGUAGES C CXX)</code> 才会让 CMake 的 MPI 查找创建 C 目标。</li>
-</ul>
-<h3>决策与取舍</h3>
-<ul>
-<li>优先使用 apt/ROS 官方二进制包补齐已有 manifest 依赖；没有引入源码编译的第三方副本。仅对真实的 CMake 语言声明根因做一行修复。</li>
-</ul>
-<h3>后续事项</h3>
-<ul>
-<li>全量 <code>colcon test</code> 仍会因 <code>remote_controller</code> 现有版权/格式 lint，以及 <code>bxi_example_py_elf3</code> 配置了不存在的 <code>test/</code> 目录而失败；功能测试已单独通过。未启动仿真/rviz。</li>
-</ul>
 <hr>
 <h2>恢复启动实时日志与 RViz 点云</h2>
 <ul>
@@ -210,19 +186,6 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <li><code>colcon build --merge-install --packages-select bxi_scan_nav</code>：构建通过。</li>
 <li><code>ros2 topic info /rtabmap/cloud_map --verbose</code>：发布端与 RViz 订阅端均为 Reliable + Volatile，订阅者为 1。</li>
 <li><code>ros2 topic echo --once /rtabmap/cloud_map --field header</code>：收到 <code>frame_id: world</code> 的实时消息。</li>
-</ul>
-<h3>值得学习</h3>
-<ul>
-<li>RViz 空白要同时检查发布端是否存在、组件动态库是否成功加载，以及 DDS QoS 是否兼容；topic 存在不代表订阅能收到数据。</li>
-<li>ROS deb 包更新不同步会出现已安装依赖却缺失新 ABI 动态库的情况，应结合 <code>dlopen</code> 错误和包版本定位。</li>
-</ul>
-<h3>决策与取舍</h3>
-<ul>
-<li>因系统升级需要 sudo 密码，使用官方 deb 解出的本地 overlay 临时恢复；系统包未来升级后 <code>start.sh</code> 会优先使用系统动态库。</li>
-</ul>
-<h3>后续事项</h3>
-<ul>
-<li>有 sudo 权限时可执行 <code>sudo apt install --only-upgrade ros-humble-diagnostic-updater</code>，之后本地 overlay 将不再被使用。</li>
 </ul>
 </main>
 <footer>由 3D-nav-dev/项目汇总.md 自动生成</footer>

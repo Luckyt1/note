@@ -1,6 +1,6 @@
 ---
 name: obsidian-project-note
-description: Save one Obsidian learning note after AI coding or project-writing tasks that make substantive project changes, summarizing the work, verification, decisions, and lessons worth learning. Use when Codex implements, fixes, refactors, tests, configures, or documents a project; skip read-only work and migration-only copying, syncing, deployment, backup, restore, import, or export operations that do not change behavior.
+description: Save one concise Obsidian project note after AI coding or project-writing tasks that make substantive project changes, summarizing the outcome, key changes, and verification. Use when Codex implements, fixes, refactors, tests, configures, or documents a project; skip read-only work and migration-only copying, syncing, deployment, backup, restore, import, or export operations that do not change behavior.
 ---
 
 # Obsidian Project Note
@@ -42,15 +42,6 @@ tags:
 
 ## 验证结果
 - `<command or check>`：<result>
-
-## 值得学习
-- <reusable concept, debugging insight, API behavior, design tradeoff, or engineering practice>
-
-## 决策与取舍
-- <important choice and the rejected or deferred alternative; write “无特殊取舍” if none>
-
-## 后续事项
-- <remaining risk or follow-up; write “无” if none>
 ```
 
 Keep it factual and useful to the future reader. Do not paste large diffs or logs. Never record secrets, credentials, tokens, private keys, or sensitive environment values.

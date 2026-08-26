@@ -147,18 +147,6 @@ footer { width: min(100%, 960px); margin: 1.25rem auto 0; color: var(--muted); f
 <li><code>python3 -m pytest -q tests src/bxi_depth_camera/test src/remote_controller/test</code>：54 项通过、1 项跳过。</li>
 <li><code>git diff --check</code> 与场景 joint/freejoint/actuator 检索：通过，场景无动态关节或执行器。</li>
 </ul>
-<h3>值得学习</h3>
-<ul>
-<li>MuJoCo 中固定在 worldbody 层级且不含 joint/freejoint 的 body 是静态物体；直接删除运动自由度比增加零速控制或额外 actuator 更可靠、更简单。</li>
-</ul>
-<h3>决策与取舍</h3>
-<ul>
-<li>保留 <code>ih_moving_*</code> 名称以避免破坏已有传感器、测试或外部工具引用；仅改变物理行为和文档语义。</li>
-</ul>
-<h3>后续事项</h3>
-<ul>
-<li>仓库根目录直接执行 <code>pytest</code> 会误收集 <code>install/</code> 中面向 ARM64 的相机厂商模块；正式测试应限定到源码测试目录。</li>
-</ul>
 </main>
 <footer>由 bxi_rl_controller_ros2_example/项目汇总.md 自动生成</footer>
 </body>
